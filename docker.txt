@@ -1,0 +1,86 @@
+Yes, you do need to keep that process running while you are actively working on the project! If you press `Ctrl+C` or close that terminal tab, the servers will shut down.
+
+However, having it take up your whole terminal can be annoying. Here is the **Proper Docker Development Workflow** for your day-to-day coding:
+
+### 1. Starting the Project (The "Detached" Way)
+Instead of running it in the foreground, you can start Docker in the background (detached mode) by adding `-d`. 
+
+When you sit down to work, run:
+```bash
+docker compose up -d
+```
+This starts all your services and immediately gives your terminal back to you so you can run other commands. 
+
+### 2. Making Code Changes (Hot-Reloading)
+While Docker is running in the background, you just write code normally in your IDE:
+- **Frontend (`.tsx`, `.css` files):** Vite is watching your files. When you save a file, it instantly updates the browser without a full refresh.
+- **Backend (`.py` files):** The FastAPI server is running with the `--reload` flag. When you save a Python file, the backend instantly restarts itself inside the container. 
+
+You **do not** need to type any Docker commands when you make standard code changes! Just hit Save and look at your browser.
+
+### 3. When do you actually need to rebuild?
+The *only* time you need to stop and run the `--build` command again is when you change the core environment:
+- You add a new Python package to `requirements.txt`
+- You run `npm install <new-package>`
+- You modify a `Dockerfile`
+
+When you do one of those things, just run:
+```bash
+docker compose up --build -d
+```
+
+### 4. How to view logs?
+Since the server is running in the background, you might want to see `print()` statements or errors. You can peek at the logs anytime:
+- **View Backend logs:** `docker compose logs -f backend`
+- **View Frontend logs:** `docker compose logs -f frontend`
+- **View Celery logs:** `docker compose logs -f celery-worker`
+*(Press `Ctrl+C` to exit the logs; this won't stop the server!)*
+
+---
+
+# 🚀 The Ultimate Docker Cheat Sheet
+
+### Scenario 1: Starting your day ☕
+You just opened your laptop and want to start coding. You haven't added any new packages.
+**Command:**
+```bash
+docker compose up -d
+```
+*(Starts everything in the background in 2 seconds. You get your terminal back.)*
+
+### Scenario 2: You just installed a new package 📦
+You added a new library (like `npm install something` or updated `requirements.txt`).
+**Command:**
+```bash
+docker compose up --build -d
+```
+*(Forces Docker to rebuild the containers so they include your new packages. Takes a bit longer.)*
+
+### Scenario 3: Something broke and you need to see the errors 🐛
+A container crashed or you want to see your `print()` statements.
+**Command:**
+```bash
+docker compose logs -f
+```
+*(Shows a live feed of all logs. Press `Ctrl+C` to exit the logs. The server will keep running!)*
+*(Tip: To see just the backend, run: `docker compose logs -f backend`)*
+
+### Scenario 4: You are done for the day 🛑
+You want to shut down the servers and save battery.
+**Command:**
+```bash
+docker compose down
+```
+*(Safely stops and removes the running background containers.)*
+
+### Scenario 5: Starting completely fresh (Nuke everything) ☢️
+Your database is messed up or something is deeply broken, and you want to wipe everything and start from zero.
+**Command:**
+```bash
+docker compose down -v
+```
+*(Destroys the containers AND wipes the database clean. Next time you run `up`, it will be a fresh database.)*
+
+
+
+docker compose up -d

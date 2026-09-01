@@ -76,6 +76,22 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
     }
   };
 
+  const handlePriorityChange = async (priority: any) => {
+    if (!ticket) return;
+    try {
+      await ticketService.updatePriority(ticket.id, priority);
+      const [tData, aData] = await Promise.all([
+        ticketService.getTicket(ticketId),
+        ticketService.getActivity(ticketId)
+      ]);
+      setTicket(tData);
+      setActivities(aData);
+      onUpdated();
+    } catch (e: any) {
+      alert(e.response?.data?.detail || "Failed to update priority");
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -98,9 +114,21 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
         <div className="flex items-center justify-between p-4 border-b border-border-color bg-surface-hover/30">
           <div className="flex items-center gap-3">
             <span className="text-sm font-mono font-bold text-muted">{ticket.ticket_key}</span>
-            <Badge variant={ticket.priority === 'CRITICAL' ? 'critical' : ticket.priority === 'HIGH' ? 'high' : 'default'} className="text-[10px] py-0.5">
-              {ticket.priority}
-            </Badge>
+            <select
+              value={ticket.priority}
+              onChange={(e) => handlePriorityChange(e.target.value)}
+              className={`text-[10px] font-bold uppercase py-0.5 px-2 rounded-sm border focus:outline-none ${
+                ticket.priority === 'CRITICAL' ? 'bg-red-500/20 text-red-500 border-red-500/50' :
+                ticket.priority === 'HIGH' ? 'bg-orange-500/20 text-orange-500 border-orange-500/50' :
+                ticket.priority === 'MEDIUM' ? 'bg-blue-500/20 text-blue-500 border-blue-500/50' :
+                'bg-gray-500/20 text-gray-400 border-gray-500/50'
+              }`}
+            >
+              <option value="CRITICAL">CRITICAL</option>
+              <option value="HIGH">HIGH</option>
+              <option value="MEDIUM">MEDIUM</option>
+              <option value="LOW">LOW</option>
+            </select>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}><X size={18} /></Button>
         </div>
@@ -151,13 +179,35 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
               <span className="text-muted flex items-center gap-2"><Clock size={14} /> Created</span>
               <span>{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</span>
             </div>
-            {ticket.sla_due_at && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted flex items-center gap-2"><ShieldAlert size={14} /> SLA Due</span>
-                <span className={new Date(ticket.sla_due_at) < new Date() && ticket.status !== 'RESOLVED' ? 'text-red-500 font-bold' : ''}>
-                  {formatDistanceToNow(new Date(ticket.sla_due_at), { addSuffix: true })}
-                </span>
-              </div>
+            
+            {ticket.sla && (
+              <>
+                <div className="flex items-center justify-between text-sm pt-2 border-t border-border-color/30">
+                  <span className="text-muted flex items-center gap-2"><ShieldAlert size={14} /> SLA Policy</span>
+                  <span className="font-medium text-accent">{ticket.sla.policy.name}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted pl-5">Response Due</span>
+                  <span className={ticket.sla.response_completed_at ? 'text-emerald-500 line-through' : new Date(ticket.sla.response_due_at) < new Date() ? 'text-red-500 font-bold' : ''}>
+                    {ticket.sla.response_completed_at ? 'Completed' : formatDistanceToNow(new Date(ticket.sla.response_due_at), { addSuffix: true })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted pl-5">Resolution Due</span>
+                  <span className={ticket.sla.resolution_completed_at ? 'text-emerald-500 line-through' : new Date(ticket.sla.resolution_due_at) < new Date() ? 'text-red-500 font-bold' : ''}>
+                    {ticket.sla.resolution_completed_at ? 'Completed' : formatDistanceToNow(new Date(ticket.sla.resolution_due_at), { addSuffix: true })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted pl-5">Status</span>
+                  <span className={`font-bold text-[10px] uppercase ${
+                    ticket.sla.status === 'BREACHED' ? 'text-red-500' : 
+                    ticket.sla.status === 'AT_RISK' ? 'text-orange-400' :
+                    ticket.sla.status === 'COMPLETED' ? 'text-emerald-500' :
+                    'text-accent'
+                  }`}>{ticket.sla.status.replace('_', ' ')}</span>
+                </div>
+              </>
             )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted flex items-center gap-2"><CheckCircle size={14} /> Type</span>
@@ -183,6 +233,7 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
                     <span className="text-muted mx-1">
                       {act.action === 'CREATED' && 'created this ticket'}
                       {act.action === 'STATUS_CHANGED' && `changed status from ${act.old_value} to ${act.new_value}`}
+                      {act.action === 'PRIORITY_CHANGED' && `changed priority from ${act.old_value} to ${act.new_value}`}
                       {act.action === 'ASSIGNED' && `assigned ticket to ${act.new_value === 'Unassigned' ? 'nobody' : act.new_value}`}
                     </span>
                   </div>
@@ -196,6 +247,29 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
               )}
             </div>
           </div>
+          
+          {/* Delete Ticket Button */}
+          {ticket.status === 'CLOSED' && (user?.role === 'ADMIN' || user?.role === 'PROJECT_LEAD') && (
+            <div className="pt-6 border-t border-border-color mt-6">
+              <Button 
+                variant="outline" 
+                className="w-full text-red-500 border-red-500/20 hover:bg-red-500/10 hover:text-red-400 gap-2"
+                onClick={async () => {
+                  if (confirm("Are you sure you want to permanently delete this ticket? This action cannot be undone.")) {
+                    try {
+                      await ticketService.deleteTicket(ticket.id);
+                      onUpdated();
+                      onClose();
+                    } catch (e: any) {
+                      alert(e.response?.data?.detail || "Failed to delete ticket");
+                    }
+                  }
+                }}
+              >
+                <X size={16} /> Delete Ticket
+              </Button>
+            </div>
+          )}
         </div>
         
       </div>

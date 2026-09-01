@@ -1,5 +1,6 @@
 import { apiClient } from './api';
 import type { User } from '../store/authStore';
+import type { SLAStatus, SLAPolicy } from './sla';
 
 export type TicketType = 'BUG' | 'INCIDENT' | 'MAINTENANCE' | 'TASK' | 'CHANGE_REQUEST';
 export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -17,11 +18,7 @@ export interface Ticket {
   status: TicketStatus;
   assignee_id: string | null;
   created_by_id: string | null;
-  
-  sla_policy_id: string | null;
-  sla_started_at: string | null;
-  sla_due_at: string | null;
-  sla_status: string | null;
+  // SLA fields removed in Phase 5
   
   escalation_status: EscalationStatus;
   escalated_at: string | null;
@@ -33,6 +30,22 @@ export interface Ticket {
   
   assignee?: User | null;
   created_by?: User | null;
+  sla?: {
+    id: string;
+    ticket_id: string;
+    policy_id: string;
+    response_started_at: string;
+    response_due_at: string;
+    response_completed_at: string | null;
+    resolution_started_at: string;
+    resolution_due_at: string;
+    resolution_completed_at: string | null;
+    status: string; // SLAStatus
+    paused_at: string | null;
+    total_pause_seconds: number;
+    breached_at: string | null;
+    policy: SLAPolicy;
+  } | null;
 }
 
 export interface TicketCreate {
@@ -85,5 +98,14 @@ export const ticketService = {
   getActivity: async (id: string): Promise<TicketActivity[]> => {
     const response = await apiClient.get(`/tickets/${id}/activity`);
     return response.data;
+  },
+
+  updatePriority: async (id: string, priority: TicketPriority): Promise<Ticket> => {
+    const response = await apiClient.patch(`/tickets/${id}/priority`, { priority });
+    return response.data;
+  },
+
+  deleteTicket: async (id: string): Promise<void> => {
+    await apiClient.delete(`/tickets/${id}`);
   },
 };

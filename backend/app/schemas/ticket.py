@@ -3,6 +3,9 @@ from uuid import UUID
 from datetime import datetime
 from app.models.ticket import TicketType, TicketPriority, TicketStatus, EscalationStatus
 from app.schemas.user import User
+from typing import Optional, ForwardRef
+
+TicketSLAResponse = ForwardRef('TicketSLAResponse')
 
 class TicketBase(BaseModel):
     title: str
@@ -26,6 +29,9 @@ class TicketStatusUpdate(BaseModel):
 class TicketAssignUpdate(BaseModel):
     assignee_id: UUID | None
 
+class TicketPriorityUpdate(BaseModel):
+    priority: TicketPriority
+
 class TicketInDBBase(TicketBase):
     id: UUID
     ticket_key: str
@@ -34,10 +40,7 @@ class TicketInDBBase(TicketBase):
     assignee_id: UUID | None
     created_by_id: UUID | None
     
-    sla_policy_id: UUID | None
-    sla_started_at: datetime | None
-    sla_due_at: datetime | None
-    sla_status: str | None
+    # SLA fields removed in Phase 5
     
     escalation_status: EscalationStatus
     escalated_at: datetime | None
@@ -52,6 +55,7 @@ class TicketInDBBase(TicketBase):
 class TicketResponse(TicketInDBBase):
     assignee: User | None = None
     created_by: User | None = None
+    sla: Optional[TicketSLAResponse] = None
 
 class TicketActivityBase(BaseModel):
     ticket_id: UUID
@@ -67,3 +71,6 @@ class TicketActivityResponse(TicketActivityBase):
     actor: User | None = None
     
     model_config = ConfigDict(from_attributes=True)
+
+from app.schemas.sla import TicketSLAResponse
+TicketResponse.model_rebuild()

@@ -4,6 +4,7 @@ import { Header } from '../components/layout/Header';
 import { FloatingNavigation } from '../components/layout/FloatingNavigation';
 import { SetPasswordModal } from '../components/auth/SetPasswordModal';
 import { RequireProjectAccess } from '../components/auth/RequireProjectAccess';
+import { Toaster } from 'react-hot-toast';
 
 export const AppLayout: React.FC = () => {
   return (
@@ -19,6 +20,26 @@ export const AppLayout: React.FC = () => {
         </div>
       </main>
       <SetPasswordModal />
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          style: {
+            background: '#2A2A2A',
+            color: '#FDFDFD',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            textTransform: 'uppercase'
+          },
+          success: {
+            iconTheme: {
+              primary: '#E7FE25',
+              secondary: '#161616',
+            },
+          },
+        }} 
+      />
     </div>
   );
 };

@@ -14,6 +14,10 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'health_check_every_hour': {
         'task': 'app.workers.tasks.health_check_task',
-        'schedule': 3600.0, # Run every hour instead of every 10 seconds
+        'schedule': 3600.0,
+    },
+    'check_sla_status_every_minute': {
+        'task': 'app.workers.tasks.check_sla_status',
+        'schedule': 60.0,
     },
 }

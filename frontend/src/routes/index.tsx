@@ -8,6 +8,7 @@ import { Tickets } from '../pages/Tickets';
 import { Projects } from '../pages/Projects';
 import { ProjectDetails } from '../pages/ProjectDetails';
 import { Users } from '../pages/Users';
+import SlaPolicies from '../pages/SlaPolicies';
 
 export const router = createBrowserRouter([
   {
@@ -44,7 +45,11 @@ export const router = createBrowserRouter([
           { path: 'projects', element: <Projects /> },
           { path: 'projects/:id', element: <ProjectDetails /> },
           { path: 'escalations', element: <div className="p-8">Escalations Placeholder</div> },
-          { path: 'sla', element: <div className="p-8">SLA Configuration Placeholder</div> },
+          { path: 'sla', element: (
+            <RoleProtectedRoute allowedRoles={['ADMIN']}>
+              <SlaPolicies />
+            </RoleProtectedRoute>
+          )},
           { path: 'analytics', element: <div className="p-8">Analytics Placeholder</div> },
           { path: 'reports', element: <div className="p-8">Reports Placeholder</div> },
           { path: 'notifications', element: <div className="p-8">Notifications Placeholder</div> },

@@ -5,10 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.db.session import get_db
-from app.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse, TicketStatusUpdate, TicketAssignUpdate, TicketActivityResponse
+from app.schemas.ticket import TicketCreate, TicketUpdate, TicketResponse, TicketStatusUpdate, TicketAssignUpdate, TicketActivityResponse, TicketPriorityUpdate
 from app.models.user import User
 from app.models.ticket import Ticket
 from app.models.ticket_activity import TicketActivity
+from app.models.ticket_sla import TicketSLA
+from app.models.sla_policy import SLAPolicy
+from app.schemas.sla import TicketSLAResponse
 from app.api.dependencies import get_current_user
 from app.services import ticket_service
 
@@ -40,7 +43,11 @@ async def get_tickets(
     Get tickets, optionally filtered.
     """
     # Simple project check for now
-    query = select(Ticket).options(selectinload(Ticket.assignee), selectinload(Ticket.created_by))
+    query = select(Ticket).options(
+        selectinload(Ticket.assignee), 
+        selectinload(Ticket.created_by),
+        selectinload(Ticket.sla).selectinload(TicketSLA.policy)
+    )
     
     if project_id:
         query = query.where(Ticket.project_id == project_id)
@@ -66,7 +73,11 @@ async def get_ticket(
     """
     result = await session.execute(
         select(Ticket)
-        .options(selectinload(Ticket.assignee), selectinload(Ticket.created_by))
+        .options(
+            selectinload(Ticket.assignee), 
+            selectinload(Ticket.created_by),
+            selectinload(Ticket.sla).selectinload(TicketSLA.policy)
+        )
         .where(Ticket.id == ticket_id)
     )
     ticket = result.scalars().first()
@@ -99,6 +110,18 @@ async def assign_ticket(
     """
     return await ticket_service.assign_ticket(session, ticket_id, assign_in, current_user)
 
+@router.patch("/{ticket_id}/priority", response_model=TicketResponse)
+async def update_ticket_priority(
+    ticket_id: uuid.UUID,
+    priority_in: TicketPriorityUpdate,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    """
+    Update a ticket's priority and recalculate SLA.
+    """
+    return await ticket_service.update_ticket_priority(session, ticket_id, priority_in.priority.value, current_user)
+
 @router.get("/{ticket_id}/activity", response_model=list[TicketActivityResponse])
 async def get_ticket_activity(
     ticket_id: uuid.UUID,
@@ -115,3 +138,34 @@ async def get_ticket_activity(
         .order_by(TicketActivity.created_at.desc())
     )
     return list(result.scalars().all())
+
+@router.get("/{ticket_id}/sla", response_model=TicketSLAResponse)
+async def get_ticket_sla(
+    ticket_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    """
+    Get SLA details for a ticket.
+    """
+    result = await session.execute(
+        select(TicketSLA)
+        .options(selectinload(TicketSLA.policy))
+        .where(TicketSLA.ticket_id == ticket_id)
+    )
+    sla = result.scalars().first()
+    if not sla:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="SLA not found for this ticket")
+    return sla
+
+@router.delete("/{ticket_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_ticket(
+    ticket_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    """
+    Delete a ticket (only if CLOSED and by ADMIN/PROJECT_LEAD).
+    """
+    await ticket_service.delete_ticket(session, ticket_id, current_user)

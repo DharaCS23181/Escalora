@@ -49,10 +49,7 @@ class Ticket(Base):
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     
     # SLA Fields
-    sla_policy_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
-    sla_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    sla_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    sla_status: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # Removed legacy fields in Phase 5: sla_policy_id, sla_started_at, sla_due_at, sla_status
     
     # Escalation Fields
     escalation_status: Mapped[EscalationStatus] = mapped_column(SQLEnum(EscalationStatus, name="escalationstatusenum"), nullable=False, default=EscalationStatus.NONE)
@@ -69,3 +66,6 @@ class Ticket(Base):
     assignee: Mapped["User"] = relationship("User", foreign_keys=[assignee_id])
     created_by: Mapped["User"] = relationship("User", foreign_keys=[created_by_id])
     escalated_to: Mapped["User"] = relationship("User", foreign_keys=[escalated_to_id])
+    sla: Mapped["TicketSLA"] = relationship("TicketSLA", back_populates="ticket", uselist=False, cascade="all, delete-orphan")
+    activities: Mapped[list["TicketActivity"]] = relationship("TicketActivity", back_populates="ticket", cascade="all, delete-orphan")
+    notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="ticket", cascade="all, delete-orphan")

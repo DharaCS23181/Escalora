@@ -101,6 +101,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tickets, onTicketMoved
     }
   };
 
+  const handleDelete = async (ticketId: string) => {
+    try {
+      await ticketService.deleteTicket(ticketId);
+      onTicketMoved(); // Trigger refetch
+    } catch (error: any) {
+      alert(error.response?.data?.detail || "Failed to delete ticket");
+    }
+  };
+
   const activeTicket = activeId ? optimisticTickets.find(t => t.id === activeId) : null;
 
   return (
@@ -121,6 +130,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ tickets, onTicketMoved
                 status={col} 
                 tickets={colTickets} 
                 onTicketClick={onTicketClick}
+                onTicketDelete={handleDelete}
               />
             );
           })}

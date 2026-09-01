@@ -9,9 +9,10 @@ interface KanbanColumnProps {
   status: TicketStatus;
   tickets: Ticket[];
   onTicketClick: (id: string) => void;
+  onTicketDelete?: (id: string) => void;
 }
 
-export const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tickets, onTicketClick }) => {
+export const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tickets, onTicketClick, onTicketDelete }) => {
   const { setNodeRef, isOver } = useDroppable({
     id: status,
     data: {
@@ -37,6 +38,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ status, tickets, onT
               key={ticket.id} 
               ticket={ticket} 
               onClick={() => onTicketClick(ticket.id)} 
+              onDelete={onTicketDelete}
             />
           ))}
         </SortableContext>

@@ -4,16 +4,19 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Avatar } from '../ui/Avatar';
-import { Clock } from 'lucide-react';
+import { Clock, Trash2 } from 'lucide-react';
 import type { Ticket } from '../../services/ticket';
 import { formatDistanceToNow, isPast } from 'date-fns';
+import { useAuthStore } from '../../store/authStore';
 
 interface TicketCardProps {
   ticket: Ticket;
   onClick: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onClick }) => {
+export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onClick, onDelete }) => {
+  const { user } = useAuthStore();
   const {
     attributes,
     listeners,
@@ -35,15 +38,26 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onClick }) => {
   };
 
   const getSlaBadge = () => {
-    if (!ticket.sla_due_at || ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') return null;
+    if (!ticket.sla || ticket.status === 'RESOLVED' || ticket.status === 'CLOSED') return null;
     
-    const dueDate = new Date(ticket.sla_due_at);
-    const breached = isPast(dueDate);
+    // Default to response SLA if not completed, else resolution SLA
+    const dueAtStr = !ticket.sla.response_completed_at ? ticket.sla.response_due_at : ticket.sla.resolution_due_at;
+    const dueDate = new Date(dueAtStr);
+    
+    // Status is provided by backend
+    const status = ticket.sla.status;
+    const breached = status === 'BREACHED';
+    const atRisk = status === 'AT_RISK';
+    
+    let colorClass = 'text-muted';
+    if (breached) colorClass = 'text-red-500 font-bold';
+    else if (atRisk) colorClass = 'text-orange-400 font-bold';
+    else if (status === 'COMPLETED') colorClass = 'text-emerald-500';
     
     return (
-      <span className={`text-xs flex items-center gap-1 ${breached ? 'text-red-500 font-bold' : 'text-muted'}`}>
+      <span className={`text-[10px] uppercase font-bold flex items-center gap-1 ${colorClass}`}>
         <Clock size={12} />
-        {breached ? 'Breached' : formatDistanceToNow(dueDate, { addSuffix: true })}
+        {breached ? 'Breached' : status === 'COMPLETED' ? 'SLA Met' : formatDistanceToNow(dueDate, { addSuffix: true })}
       </span>
     );
   };
@@ -67,13 +81,28 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onClick }) => {
       className="p-3 flex flex-col gap-2 cursor-grab hover:border-accent hover:shadow-[0_0_12px_rgba(231,254,37,0.2)] transition-all bg-accent/10 border border-accent/30 select-none"
       onClick={onClick}
     >
-      <div className="flex justify-between items-start">
-        <span className="text-[11px] font-mono text-muted font-bold">{ticket.ticket_key}</span>
-        {ticket.escalation_status !== 'NONE' && (
-          <Badge variant="outline" className="text-[10px] py-0 border-accent/50 text-accent bg-accent/10">
-            ESCALATED
-          </Badge>
-        )}
+      <div className="flex justify-between items-start gap-2">
+        <span className="text-[11px] font-mono text-muted font-bold truncate">{ticket.ticket_key}</span>
+        <div className="flex items-center gap-1">
+          {ticket.escalation_status !== 'NONE' && (
+            <Badge variant="outline" className="text-[10px] py-0 border-accent/50 text-accent bg-accent/10">
+              ESCALATED
+            </Badge>
+          )}
+          {ticket.status === 'CLOSED' && onDelete && (user?.role === 'ADMIN' || user?.role === 'PROJECT_LEAD') && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation(); // prevent drag and click
+                onDelete(ticket.id);
+              }}
+              className="text-red-500 hover:text-red-400 hover:bg-red-500/10 p-1 rounded transition-colors"
+              title="Delete Ticket"
+            >
+              <Trash2 size={12} />
+            </button>
+          )}
+        </div>
       </div>
       
       <p className="font-medium text-sm leading-snug">{ticket.title}</p>

@@ -22,5 +22,5 @@ class TicketActivity(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     # Relationships
-    ticket: Mapped["Ticket"] = relationship("Ticket", backref="activities")
+    ticket: Mapped["Ticket"] = relationship("Ticket", back_populates="activities")
     actor: Mapped["User"] = relationship("User", foreign_keys=[actor_id])

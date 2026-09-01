@@ -31,10 +31,9 @@ const NAV_ITEMS: NavItem[] = [
   { icon: FolderKanban, label: 'Projects', path: '/projects', roles: ['ADMIN', 'PROJECT_LEAD'] },
   { icon: Layers, label: 'Tickets', path: '/tickets', roles: ['PROJECT_LEAD', 'SENIOR_DEVELOPER', 'DEVELOPER'] },
   { icon: AlertTriangle, label: 'Escalations', path: '/escalations', roles: ['PROJECT_LEAD', 'SENIOR_DEVELOPER'] },
-  { icon: ShieldAlert, label: 'SLA Config', path: '/sla', roles: ['PROJECT_LEAD'] },
   { icon: Users, label: 'Users', path: '/users', roles: ['ADMIN'] },
   { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: ['ADMIN', 'PROJECT_LEAD'] },
-  { icon: FileText, label: 'Reports', path: '/reports', roles: ['ADMIN', 'PROJECT_LEAD'] },
+  { icon: ShieldAlert, label: 'SLA Policies', path: '/sla', roles: ['ADMIN'] },
   { icon: Activity, label: 'Audit Logs', path: '/audit', roles: ['ADMIN'] },
   { icon: Settings, label: 'Settings', path: '/settings', roles: ['ADMIN'] },
 ];

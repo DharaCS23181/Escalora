@@ -27,5 +27,5 @@ class Notification(Base):
     # Relationships
     recipient: Mapped["User"] = relationship("User", foreign_keys=[recipient_id], backref="notifications")
     actor: Mapped["User"] = relationship("User", foreign_keys=[actor_id])
-    ticket: Mapped["Ticket"] = relationship("Ticket", foreign_keys=[ticket_id])
+    ticket: Mapped["Ticket"] = relationship("Ticket", foreign_keys=[ticket_id], back_populates="notifications")
     project: Mapped["Project"] = relationship("Project", foreign_keys=[project_id])

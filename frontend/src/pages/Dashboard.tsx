@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Clock, AlertTriangle, CheckCircle, TrendingUp, FolderX } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { projectService, type Project } from '../services/project';
+import { slaService, type SLAOverviewResponse } from '../services/sla';
 import { useNavigate } from 'react-router-dom';
 
 export const Dashboard: React.FC = () => {
@@ -10,14 +11,19 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [slaMetrics, setSlaMetrics] = useState<SLAOverviewResponse | null>(null);
 
   useEffect(() => {
-    projectService.getProjects().then((data) => {
-      setProjects(data);
+    Promise.all([
+      projectService.getProjects(),
+      slaService.getOverview()
+    ]).then(([projectsData, slaData]) => {
+      setProjects(projectsData);
+      setSlaMetrics(slaData);
       setLoading(false);
 
-      if (user?.role !== 'ADMIN' && data.length === 1) {
-        navigate(`/projects/${data[0].id}`, { replace: true });
+      if (user?.role !== 'ADMIN' && projectsData.length === 1) {
+        navigate(`/projects/${projectsData[0].id}`, { replace: true });
       }
     });
   }, [user, navigate]);
@@ -36,12 +42,12 @@ export const Dashboard: React.FC = () => {
       <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-xs font-medium text-muted">Open Tickets</CardTitle>
+            <CardTitle className="text-xs font-medium text-muted">Active Tickets</CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">24</div>
-            <p className="text-[11px] text-muted mt-1">+4 from last week</p>
+            <div className="text-xl font-bold">{slaMetrics?.total_active_tickets || 0}</div>
+            <p className="text-[11px] text-muted mt-1">across active projects</p>
           </CardContent>
         </Card>
 
@@ -51,7 +57,7 @@ export const Dashboard: React.FC = () => {
             <Clock className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">3</div>
+            <div className="text-xl font-bold">{slaMetrics?.breached_count || 0}</div>
             <p className="text-[11px] text-muted mt-1">Requires immediate attention</p>
           </CardContent>
         </Card>
@@ -62,19 +68,19 @@ export const Dashboard: React.FC = () => {
             <TrendingUp className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">4.2 hrs</div>
-            <p className="text-[11px] text-muted mt-1">-12% from last month</p>
+            <div className="text-xl font-bold">{Math.round((slaMetrics?.average_resolution_minutes || 0) / 60)} hrs</div>
+            <p className="text-[11px] text-muted mt-1">all time average</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-xs font-medium text-muted">Resolved Today</CardTitle>
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
+            <CardTitle className="text-xs font-medium text-muted">Tickets At Risk</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">12</div>
-            <p className="text-[11px] text-muted mt-1">Great job team</p>
+            <div className="text-xl font-bold">{slaMetrics?.at_risk_count || 0}</div>
+            <p className="text-[11px] text-muted mt-1">approaching breach</p>
           </CardContent>
         </Card>
       </div>
@@ -106,11 +112,14 @@ export const Dashboard: React.FC = () => {
           </CardHeader>
           <CardContent className="flex flex-col items-center justify-center flex-1 py-4">
             <div className="relative flex items-center justify-center h-24 w-24 rounded-full border-[3px] border-surface-hover">
-              <div className="absolute inset-0 rounded-full border-[3px] border-accent border-r-transparent rotate-45" />
-              <span className="text-2xl font-bold">85%</span>
+              <div 
+                className="absolute inset-0 rounded-full border-[3px] border-accent" 
+                style={{ clipPath: `polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% ${100 - (slaMetrics?.resolution_sla_compliance || 0)}%)` }}
+              />
+              <span className="text-2xl font-bold">{Math.round(slaMetrics?.resolution_sla_compliance || 0)}%</span>
             </div>
             <p className="text-xs text-muted mt-4 text-center px-2">
-              15% of active tickets are at risk of breaching SLA within 2 hours.
+              Compliance rate across all SLAs. Keep it above 90%.
             </p>
           </CardContent>
         </Card>

@@ -64,12 +64,25 @@ async def create_ticket(session: AsyncSession, ticket_in: TicketCreate, current_
         
     project = await get_project(session, ticket_in.project_id)
     
-    # Generate Key: ProjectKey-COUNT+1
-    count_result = await session.execute(
-        select(func.count(Ticket.id)).where(Ticket.project_id == project.id)
+    # Generate Key: ProjectKey-{HighestNumber+1}
+    last_ticket_result = await session.execute(
+        select(Ticket.ticket_key)
+        .where(Ticket.project_id == project.id)
+        .order_by(Ticket.created_at.desc())
+        .limit(1)
     )
-    ticket_count = count_result.scalar_one()
-    new_key = f"{project.key}-{ticket_count + 1}"
+    last_key = last_ticket_result.scalar_one_or_none()
+    
+    if last_key and "-" in last_key:
+        try:
+            last_num = int(last_key.split("-")[-1])
+            next_num = last_num + 1
+        except ValueError:
+            next_num = 1
+    else:
+        next_num = 1
+        
+    new_key = f"{project.key}-{next_num}"
     
     db_ticket = Ticket(
         **ticket_in.model_dump(exclude_unset=True),

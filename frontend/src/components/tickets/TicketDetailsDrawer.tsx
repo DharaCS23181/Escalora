@@ -11,12 +11,13 @@ import { ManualEscalationDrawer } from '../escalations/ManualEscalationDrawer';
 import { useNavigate } from 'react-router-dom';
 
 interface TicketDetailsDrawerProps {
-  ticketId: string;
+  ticketId: string | null;
+  isOpen?: boolean;
   onClose: () => void;
-  onUpdated: () => void;
+  onUpdated?: () => void;
 }
 
-export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticketId, onClose, onUpdated }) => {
+export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticketId, isOpen = true, onClose, onUpdated }) => {
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [ticket, setTicket] = useState<Ticket | null>(null);
@@ -25,7 +26,11 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
   const [isManualEscalateOpen, setIsManualEscalateOpen] = useState(false);
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
 
+  if (!isOpen) return null;
+
   useEffect(() => {
+    if (!ticketId) return;
+    
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -242,7 +247,7 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
                   </span>
                 </div>
                 <div className="pt-2 flex justify-end">
-                  <Button variant="link" size="sm" className="h-auto p-0 text-accent text-xs" onClick={() => navigate('/escalations')}>
+                  <Button variant="ghost" size="sm" className="h-auto p-0 text-accent text-xs" onClick={() => navigate('/escalations')}>
                     View Escalation
                   </Button>
                 </div>

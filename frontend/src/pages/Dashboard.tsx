@@ -1,145 +1,87 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Clock, AlertTriangle, CheckCircle, TrendingUp, FolderX } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useDashboard } from '../hooks/useDashboard';
+import { 
+  AdminDashboardLayout, 
+  ProjectLeadDashboardLayout, 
+  SeniorDevDashboardLayout, 
+  DeveloperDashboardLayout 
+} from '../components/dashboard/DashboardLayouts';
+import { Loader2, RefreshCw } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { TicketDetailsDrawer } from '../components/tickets/TicketDetailsDrawer';
 import { projectService, type Project } from '../services/project';
-import { slaService, type SLAOverviewResponse } from '../services/sla';
-import { apiClient } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuthStore();
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [globalProjectId, setGlobalProjectId] = useState<string | null>(null);
+  const { data, loading, error, refresh } = useDashboard(30000, globalProjectId); // 30s polling
+  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [slaMetrics, setSlaMetrics] = useState<SLAOverviewResponse | null>(null);
-  const [escalationMetrics, setEscalationMetrics] = useState<{ open: number, resolved: number, today: number } | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      projectService.getProjects(),
-      slaService.getOverview(),
-      apiClient.get('/escalations/metrics').then(res => res.data).catch(() => null)
-    ]).then(([projectsData, slaData, escData]) => {
-      setProjects(projectsData);
-      setSlaMetrics(slaData);
-      if (escData) {
-         setEscalationMetrics({
-             open: escData.open_count,
-             resolved: escData.resolved_count,
-             today: escData.today_count
-         });
-      }
-      setLoading(false);
+    if (user?.role === 'ADMIN' || user?.role === 'PROJECT_LEAD') {
+      projectService.getProjects().then(setProjects).catch(console.error);
+    }
+  }, [user]);
 
-      if (user?.role !== 'ADMIN' && projectsData.length === 1) {
-        navigate(`/projects/${projectsData[0].id}`, { replace: true });
-      }
-    });
-  }, [user, navigate]);
-
-  if (loading) {
-    return <div className="p-8 text-center text-muted animate-pulse">Loading dashboard...</div>;
+  if (loading && !data) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center h-[calc(100vh-var(--header-height))] bg-background">
+        <Loader2 className="animate-spin text-accent mb-4" size={32} />
+        <p className="text-muted text-sm font-mono uppercase tracking-widest">Loading Command Center...</p>
+      </div>
+    );
   }
 
+  if (error || !data) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center h-[calc(100vh-var(--header-height))] bg-background">
+        <div className="text-red-500 mb-2 font-bold font-mono">CONNECTION_ERROR</div>
+        <p className="text-muted text-sm mb-4">{error || 'Failed to load dashboard data.'}</p>
+        <Button onClick={refresh} className="gap-2">
+          <RefreshCw size={16} /> Retry Connection
+        </Button>
+      </div>
+    );
+  }
+
+  // Determine layout based on role
+  let DashboardLayout = AdminDashboardLayout;
+  if (user?.role === 'PROJECT_LEAD') DashboardLayout = ProjectLeadDashboardLayout;
+  else if (user?.role === 'SENIOR_DEVELOPER') DashboardLayout = SeniorDevDashboardLayout;
+  else if (user?.role === 'DEVELOPER') DashboardLayout = DeveloperDashboardLayout;
+
+  const canFilterProjects = user?.role === 'ADMIN' || user?.role === 'PROJECT_LEAD';
+
   return (
-    <div className="space-y-5 animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-1">Dashboard</h2>
-        <p className="text-sm text-muted">Maintenance operations overview.</p>
-      </div>
+    // The strict no-scroll constraints are applied here.
+    // Assuming header is roughly 64px, and page padding. 
+    // We use overflow-hidden to prevent page scroll.
+    <div className="h-[calc(100vh-64px)] w-full flex flex-col p-3 overflow-hidden bg-background">
+      {canFilterProjects && (
+        <div className="flex-none flex justify-end mb-2">
+          <select 
+            value={globalProjectId || ''} 
+            onChange={(e) => setGlobalProjectId(e.target.value || null)}
+            className="bg-surface border border-border-color text-xs font-bold uppercase text-foreground py-1 px-2 rounded focus:outline-none focus:border-accent"
+          >
+            <option value="">{user?.role === 'PROJECT_LEAD' ? 'ALL MY PROJECTS' : 'ALL PROJECTS'}</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
-      <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-xs font-medium text-muted">Active Tickets</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{slaMetrics?.total_active_tickets || 0}</div>
-            <p className="text-[11px] text-muted mt-1">across active projects</p>
-          </CardContent>
-        </Card>
+      <DashboardLayout data={data} onTicketClick={(id) => setSelectedTicketId(id)} />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-xs font-medium text-muted">SLA Breaches</CardTitle>
-            <Clock className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{slaMetrics?.breached_count || 0}</div>
-            <p className="text-[11px] text-muted mt-1">Requires immediate attention</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-xs font-medium text-muted">Avg Resolution Time</CardTitle>
-            <TrendingUp className="h-4 w-4 text-accent" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{Math.round((slaMetrics?.average_resolution_minutes || 0) / 60)} hrs</div>
-            <p className="text-[11px] text-muted mt-1">all time average</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-1">
-            <CardTitle className="text-xs font-medium text-muted">Tickets At Risk</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold">{slaMetrics?.at_risk_count || 0}</div>
-            <p className="text-[11px] text-muted mt-1">approaching breach</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-1 lg:col-span-4 h-full flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-sm">Escalations</CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 flex items-center justify-center">
-            {escalationMetrics ? (
-                <div className="flex w-full gap-4 items-center justify-between px-4">
-                  <div className="text-center">
-                     <div className="text-3xl font-bold text-red-500">{escalationMetrics.open}</div>
-                     <div className="text-xs text-muted uppercase tracking-wider mt-1">Open</div>
-                  </div>
-                  <div className="text-center">
-                     <div className="text-3xl font-bold text-accent">{escalationMetrics.today}</div>
-                     <div className="text-xs text-muted uppercase tracking-wider mt-1">Today</div>
-                  </div>
-                  <div className="text-center">
-                     <div className="text-3xl font-bold text-emerald-500">{escalationMetrics.resolved}</div>
-                     <div className="text-xs text-muted uppercase tracking-wider mt-1">Resolved</div>
-                  </div>
-                </div>
-            ) : (
-                <div className="text-muted text-sm italic">Metrics unavailable</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-1 lg:col-span-3 h-full flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-sm">SLA Health</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center justify-center flex-1 py-4">
-            <div className="relative flex items-center justify-center h-24 w-24 rounded-full border-[3px] border-surface-hover">
-              <div 
-                className="absolute inset-0 rounded-full border-[3px] border-accent" 
-                style={{ clipPath: `polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% ${100 - (slaMetrics?.resolution_sla_compliance || 0)}%)` }}
-              />
-              <span className="text-2xl font-bold">{Math.round(slaMetrics?.resolution_sla_compliance || 0)}%</span>
-            </div>
-            <p className="text-xs text-muted mt-4 text-center px-2">
-              Compliance rate across all SLAs. Keep it above 90%.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Existing Ticket Drawer Integration */}
+      <TicketDetailsDrawer 
+        ticketId={selectedTicketId} 
+        isOpen={!!selectedTicketId} 
+        onClose={() => setSelectedTicketId(null)} 
+      />
     </div>
   );
 };

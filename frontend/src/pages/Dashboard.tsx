@@ -4,6 +4,7 @@ import { Clock, AlertTriangle, CheckCircle, TrendingUp, FolderX } from 'lucide-r
 import { useAuthStore } from '../store/authStore';
 import { projectService, type Project } from '../services/project';
 import { slaService, type SLAOverviewResponse } from '../services/sla';
+import { apiClient } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 export const Dashboard: React.FC = () => {
@@ -12,14 +13,23 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [slaMetrics, setSlaMetrics] = useState<SLAOverviewResponse | null>(null);
+  const [escalationMetrics, setEscalationMetrics] = useState<{ open: number, resolved: number, today: number } | null>(null);
 
   useEffect(() => {
     Promise.all([
       projectService.getProjects(),
-      slaService.getOverview()
-    ]).then(([projectsData, slaData]) => {
+      slaService.getOverview(),
+      apiClient.get('/escalations/metrics').then(res => res.data).catch(() => null)
+    ]).then(([projectsData, slaData, escData]) => {
       setProjects(projectsData);
       setSlaMetrics(slaData);
+      if (escData) {
+         setEscalationMetrics({
+             open: escData.open_count,
+             resolved: escData.resolved_count,
+             today: escData.today_count
+         });
+      }
       setLoading(false);
 
       if (user?.role !== 'ADMIN' && projectsData.length === 1) {
@@ -88,21 +98,27 @@ export const Dashboard: React.FC = () => {
       <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-1 lg:col-span-4 h-full flex flex-col">
           <CardHeader>
-            <CardTitle className="text-sm">Recent Activity</CardTitle>
+            <CardTitle className="text-sm">Escalations</CardTitle>
           </CardHeader>
-          <CardContent className="flex-1">
-            <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center p-2 rounded bg-surface-hover/50">
-                  <div className="h-2 w-2 rounded-full bg-accent mr-3 flex-shrink-0" />
-                  <div className="flex-1 space-y-0.5 min-w-0">
-                    <p className="text-xs font-medium leading-none truncate">Ticket SEQA-10{i} escalated</p>
-                    <p className="text-[11px] text-muted truncate">Level {i} escalation triggered automatically.</p>
+          <CardContent className="flex-1 flex items-center justify-center">
+            {escalationMetrics ? (
+                <div className="flex w-full gap-4 items-center justify-between px-4">
+                  <div className="text-center">
+                     <div className="text-3xl font-bold text-red-500">{escalationMetrics.open}</div>
+                     <div className="text-xs text-muted uppercase tracking-wider mt-1">Open</div>
                   </div>
-                  <div className="text-[11px] text-muted whitespace-nowrap ml-2">{i * 10}m ago</div>
+                  <div className="text-center">
+                     <div className="text-3xl font-bold text-accent">{escalationMetrics.today}</div>
+                     <div className="text-xs text-muted uppercase tracking-wider mt-1">Today</div>
+                  </div>
+                  <div className="text-center">
+                     <div className="text-3xl font-bold text-emerald-500">{escalationMetrics.resolved}</div>
+                     <div className="text-xs text-muted uppercase tracking-wider mt-1">Resolved</div>
+                  </div>
                 </div>
-              ))}
-            </div>
+            ) : (
+                <div className="text-muted text-sm italic">Metrics unavailable</div>
+            )}
           </CardContent>
         </Card>
 

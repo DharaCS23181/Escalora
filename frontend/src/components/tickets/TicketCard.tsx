@@ -4,7 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Avatar } from '../ui/Avatar';
-import { Clock, Trash2 } from 'lucide-react';
+import { Clock, Trash2, Zap } from 'lucide-react';
 import type { Ticket } from '../../services/ticket';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { useAuthStore } from '../../store/authStore';
@@ -104,6 +104,12 @@ export const TicketCard: React.FC<TicketCardProps> = ({ ticket, onClick, onDelet
           )}
         </div>
       </div>
+      
+      {ticket.escalation_status && ticket.escalation_status !== 'NONE' && (
+        <Badge variant="outline" className="text-[10px] py-0 border-accent text-accent bg-accent/10 whitespace-nowrap gap-1 px-1 w-fit">
+          <Zap size={10} /> ESCALATED
+        </Badge>
+      )}
       
       <p className="font-medium text-sm leading-snug">{ticket.title}</p>
       

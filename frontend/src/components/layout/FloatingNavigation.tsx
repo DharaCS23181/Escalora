@@ -30,7 +30,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: ['ADMIN', 'PROJECT_LEAD', 'SENIOR_DEVELOPER', 'DEVELOPER'] },
   { icon: FolderKanban, label: 'Projects', path: '/projects', roles: ['ADMIN', 'PROJECT_LEAD'] },
   { icon: Layers, label: 'Tickets', path: '/tickets', roles: ['PROJECT_LEAD', 'SENIOR_DEVELOPER', 'DEVELOPER'] },
-  { icon: AlertTriangle, label: 'Escalations', path: '/escalations', roles: ['PROJECT_LEAD', 'SENIOR_DEVELOPER'] },
+  { icon: AlertTriangle, label: 'Escalations', path: '/escalations', roles: ['ADMIN', 'PROJECT_LEAD', 'SENIOR_DEVELOPER'] },
   { icon: Users, label: 'Users', path: '/users', roles: ['ADMIN'] },
   { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: ['ADMIN', 'PROJECT_LEAD'] },
   { icon: ShieldAlert, label: 'SLA Policies', path: '/sla', roles: ['ADMIN'] },

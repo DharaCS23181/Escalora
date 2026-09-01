@@ -92,3 +92,28 @@ def send_ticket_assignment_email_sync(to_email: str, name: str, ticket_key: str,
     </html>
     """
     send_email(to_email, subject, text, html)
+
+def send_escalation_email_sync(to_email: str, name: str, ticket_key: str, ticket_title: str, project_name: str, priority: str, reason: str, escalated_to_name: str):
+    subject = f"Escalation: {ticket_key} requires attention"
+    text = f"Hello {name},\n\nTicket {ticket_key} ({ticket_title}) has been escalated to you.\n\nProject: {project_name}\nPriority: {priority}\nReason: {reason}\n\nPlease log in to Escalora to review and take action.\n\nThanks,\nEscalora Team"
+    html = f"""
+    <html>
+      <body style="font-family: sans-serif; color: #161616; padding: 20px;">
+        <h2>⚡ Escalation: {ticket_key}</h2>
+        <p>Hello {name},</p>
+        <p>A ticket has been escalated to you and requires your attention.</p>
+        <div style="background: #FDFDFD; padding: 15px; border: 1px solid #ddd; margin: 20px 0; border-left: 4px solid #E7FE25;">
+            <p><strong>Ticket:</strong> {ticket_key}</p>
+            <p><strong>Title:</strong> {ticket_title}</p>
+            <p><strong>Project:</strong> {project_name}</p>
+            <p><strong>Priority:</strong> <span style="color: {'#ef4444' if priority == 'CRITICAL' else '#f97316' if priority == 'HIGH' else '#161616'}; font-weight: bold;">{priority}</span></p>
+            <p><strong>Reason:</strong> {reason}</p>
+            <p><strong>Escalated To:</strong> {escalated_to_name}</p>
+            <p><strong>Status:</strong> ESCALATED</p>
+        </div>
+        <p>Log in to Escalora to acknowledge and take over this ticket.</p>
+        <p>Best regards,<br/>The Escalora Team</p>
+      </body>
+    </html>
+    """
+    send_email(to_email, subject, text, html)

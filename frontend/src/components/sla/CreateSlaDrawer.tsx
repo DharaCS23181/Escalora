@@ -18,8 +18,8 @@ export default function CreateSlaDrawer({ isOpen, onClose, onSuccess, policyToEd
   const [formData, setFormData] = useState<{
     name: string;
     priority: TicketPriority;
-    response_time_minutes: number;
-    resolution_time_minutes: number;
+    response_time_minutes: number | '';
+    resolution_time_minutes: number | '';
     at_risk_threshold_percent: number;
     active: boolean;
   }>({
@@ -58,12 +58,19 @@ export default function CreateSlaDrawer({ isOpen, onClose, onSuccess, policyToEd
     if (!formData.name.trim()) return;
 
     setLoading(true);
+    
+    const payload = {
+      ...formData,
+      response_time_minutes: Number(formData.response_time_minutes) || 1,
+      resolution_time_minutes: Number(formData.resolution_time_minutes) || 1,
+    };
+
     try {
       if (policyToEdit) {
-        await slaService.updatePolicy(policyToEdit.id, formData as SLAPolicyUpdate);
+        await slaService.updatePolicy(policyToEdit.id, payload as SLAPolicyUpdate);
         toast.success('SLA Policy updated');
       } else {
-        await slaService.createPolicy(formData as SLAPolicyCreate);
+        await slaService.createPolicy(payload as SLAPolicyCreate);
         toast.success('SLA Policy created');
       }
       onSuccess();
@@ -120,7 +127,7 @@ export default function CreateSlaDrawer({ isOpen, onClose, onSuccess, policyToEd
                 type="number"
                 min="1"
                 value={formData.response_time_minutes}
-                onChange={(e) => setFormData({ ...formData, response_time_minutes: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, response_time_minutes: e.target.value === '' ? '' : parseInt(e.target.value) || 1 })}
                 className="w-full bg-background text-foreground border border-border-color px-3 py-2 text-sm focus:outline-none focus:border-accent rounded-md font-mono transition-colors"
                 required
               />
@@ -132,7 +139,7 @@ export default function CreateSlaDrawer({ isOpen, onClose, onSuccess, policyToEd
                 type="number"
                 min="1"
                 value={formData.resolution_time_minutes}
-                onChange={(e) => setFormData({ ...formData, resolution_time_minutes: parseInt(e.target.value) || 1 })}
+                onChange={(e) => setFormData({ ...formData, resolution_time_minutes: e.target.value === '' ? '' : parseInt(e.target.value) || 1 })}
                 className="w-full bg-background text-foreground border border-border-color px-3 py-2 text-sm focus:outline-none focus:border-accent rounded-md font-mono transition-colors"
                 required
               />

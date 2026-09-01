@@ -7,5 +7,14 @@ from app.models.ticket_activity import TicketActivity
 from app.models.notification import Notification
 from app.models.sla_policy import SLAPolicy
 from app.models.ticket_sla import TicketSLA, SLAStatus
+from app.models.escalation import Escalation, EscalationTriggerType, EscalationStatusEnum
 
-__all__ = ["User", "RoleEnum", "Project", "ProjectStatus", "ProjectMember", "ProjectActivity", "Ticket", "TicketType", "TicketPriority", "TicketStatus", "EscalationStatus", "TicketActivity", "Notification", "SLAPolicy", "TicketSLA", "SLAStatus"]
+__all__ = [
+    "User", "RoleEnum",
+    "Project", "ProjectStatus",
+    "ProjectMember", "ProjectActivity",
+    "Ticket", "TicketType", "TicketPriority", "TicketStatus", "EscalationStatus",
+    "TicketActivity", "Notification",
+    "SLAPolicy", "TicketSLA", "SLAStatus",
+    "Escalation", "EscalationTriggerType", "EscalationStatusEnum",
+]

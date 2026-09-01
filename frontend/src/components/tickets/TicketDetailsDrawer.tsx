@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Clock, Activity, UserPlus, ShieldAlert, CheckCircle, ListTodo } from 'lucide-react';
+import { X, Clock, Activity, UserPlus, ShieldAlert, CheckCircle, ListTodo, Zap } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Avatar } from '../ui/Avatar';
@@ -7,6 +7,8 @@ import { ticketService, type Ticket, type TicketActivity } from '../../services/
 import { projectService } from '../../services/project';
 import { useAuthStore } from '../../store/authStore';
 import { formatDistanceToNow } from 'date-fns';
+import { ManualEscalationDrawer } from '../escalations/ManualEscalationDrawer';
+import { useNavigate } from 'react-router-dom';
 
 interface TicketDetailsDrawerProps {
   ticketId: string;
@@ -16,9 +18,11 @@ interface TicketDetailsDrawerProps {
 
 export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticketId, onClose, onUpdated }) => {
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [activities, setActivities] = useState<TicketActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isManualEscalateOpen, setIsManualEscalateOpen] = useState(false);
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
 
   useEffect(() => {
@@ -130,7 +134,14 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
               <option value="LOW">LOW</option>
             </select>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X size={18} /></Button>
+          <div className="flex items-center gap-1">
+            {ticket.escalation_status === 'NONE' && (user?.role === 'ADMIN' || user?.role === 'PROJECT_LEAD') && (
+              <Button variant="ghost" size="sm" className="h-7 text-xs font-semibold px-2 text-muted hover:text-foreground" onClick={() => setIsManualEscalateOpen(true)}>
+                <Zap size={14} className="mr-1 text-accent" /> Escalate
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose}><X size={18} /></Button>
+          </div>
         </div>
 
         {/* Content */}
@@ -213,10 +224,30 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
               <span className="text-muted flex items-center gap-2"><CheckCircle size={14} /> Type</span>
               <span>{ticket.type}</span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted flex items-center gap-2"><ListTodo size={14} /> Escalation</span>
-              <Badge variant="outline" className="text-[10px] py-0">{ticket.escalation_status}</Badge>
-            </div>
+            
+            {ticket.escalation_status !== 'NONE' && (
+              <>
+                <div className="flex items-center justify-between text-sm pt-2 border-t border-border-color mt-2">
+                  <span className="text-muted flex items-center gap-2 font-bold"><Zap size={14} className="text-accent" /> Escalation</span>
+                  <Badge variant="outline" className="text-[10px] py-0">{ticket.escalation_status}</Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted pl-5">Escalated At</span>
+                  <span>{ticket.escalated_at ? formatDistanceToNow(new Date(ticket.escalated_at), { addSuffix: true }) : '-'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted pl-5">Escalated To</span>
+                  <span className="font-bold text-accent">
+                    {ticket.escalated_to_id === ticket.assignee_id ? ticket.assignee?.full_name : 'Check Escalation details'}
+                  </span>
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <Button variant="link" size="sm" className="h-auto p-0 text-accent text-xs" onClick={() => navigate('/escalations')}>
+                    View Escalation
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Activity Stream */}
@@ -273,6 +304,20 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
         </div>
         
       </div>
+      
+      {isManualEscalateOpen && ticket && (
+        <ManualEscalationDrawer
+          ticketId={ticket.id}
+          projectId={ticket.project_id}
+          ticketKey={ticket.ticket_key}
+          onClose={() => setIsManualEscalateOpen(false)}
+          onCreated={() => {
+            setIsManualEscalateOpen(false);
+            onUpdated();
+            onClose(); // Optional: close ticket drawer too, or just refresh
+          }}
+        />
+      )}
     </>
   );
 };

@@ -29,6 +29,7 @@ class TicketStatus(str, Enum):
 class EscalationStatus(str, Enum):
     NONE = "NONE"
     ESCALATED = "ESCALATED"
+    ACKNOWLEDGED = "ACKNOWLEDGED"
     RESOLVED = "RESOLVED"
 
 class Ticket(Base):
@@ -69,3 +70,4 @@ class Ticket(Base):
     sla: Mapped["TicketSLA"] = relationship("TicketSLA", back_populates="ticket", uselist=False, cascade="all, delete-orphan")
     activities: Mapped[list["TicketActivity"]] = relationship("TicketActivity", back_populates="ticket", cascade="all, delete-orphan")
     notifications: Mapped[list["Notification"]] = relationship("Notification", back_populates="ticket", cascade="all, delete-orphan")
+    escalations: Mapped[list["Escalation"]] = relationship("Escalation", back_populates="ticket", cascade="all, delete-orphan", foreign_keys="[Escalation.ticket_id]")

@@ -1,5 +1,7 @@
 import React from 'react';
 import { SVGWorkflow } from './SVGWorkflow';
+import lightLogo from '../../assets/light.png';
+import darkLogo from '../../assets/dark.png';
 
 export const LoginBrandPanel: React.FC = () => {
   return (
@@ -17,8 +19,8 @@ export const LoginBrandPanel: React.FC = () => {
       {/* Top Branding */}
       <div className="relative z-10 animate-fade opacity-0 delay-100">
         <div className="flex items-center gap-2 mb-6">
-          <div className="w-1.5 h-1.5 bg-accent rounded-full" />
-          <h1 className="text-xl font-extrabold tracking-widest text-primary dark:text-foreground">ESCALORA</h1>
+          <img src={lightLogo} alt="Escalora Logo" className="h-8 sm:h-10 w-auto dark:hidden" />
+          <img src={darkLogo} alt="Escalora Logo" className="h-8 sm:h-10 w-auto hidden dark:block" />
         </div>
         
         <h2 className="text-2xl lg:text-3xl font-semibold leading-snug text-foreground max-w-md mb-8">

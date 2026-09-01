@@ -5,6 +5,9 @@ import { AppLayout } from '../layouts/AppLayout';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
 import { Tickets } from '../pages/Tickets';
+import { Projects } from '../pages/Projects';
+import { ProjectDetails } from '../pages/ProjectDetails';
+import { Users } from '../pages/Users';
 
 export const router = createBrowserRouter([
   {
@@ -34,11 +37,12 @@ export const router = createBrowserRouter([
             path: 'users',
             element: (
               <RoleProtectedRoute allowedRoles={['ADMIN']}>
-                <div className="p-8">Users Management Placeholder</div>
+                <Users />
               </RoleProtectedRoute>
             ),
           },
-          { path: 'projects', element: <div className="p-8">Projects Placeholder</div> },
+          { path: 'projects', element: <Projects /> },
+          { path: 'projects/:id', element: <ProjectDetails /> },
           { path: 'escalations', element: <div className="p-8">Escalations Placeholder</div> },
           { path: 'sla', element: <div className="p-8">SLA Configuration Placeholder</div> },
           { path: 'analytics', element: <div className="p-8">Analytics Placeholder</div> },

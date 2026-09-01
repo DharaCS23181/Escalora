@@ -28,6 +28,15 @@ class Settings(BaseSettings):
     INITIAL_ADMIN_PASSWORD: str = "admin123"
     INITIAL_ADMIN_NAME: str = "System Admin"
     
+    # SMTP Email
+    SMTP_HOST: str | None = None
+    SMTP_PORT: int | None = None
+    SMTP_USERNAME: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM_EMAIL: str | None = None
+    SMTP_FROM_NAME: str | None = None
+    SMTP_USE_TLS: bool = True
+    
     # CORS
     CORS_ORIGINS: Union[str, List[str]] = []
 

@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Clock, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
+import { Clock, AlertTriangle, CheckCircle, TrendingUp, FolderX } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import { projectService, type Project } from '../services/project';
+import { useNavigate } from 'react-router-dom';
 
 export const Dashboard: React.FC = () => {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<Project[]>([]);
+
+  useEffect(() => {
+    projectService.getProjects().then((data) => {
+      setProjects(data);
+      setLoading(false);
+
+      if (user?.role !== 'ADMIN' && data.length === 1) {
+        navigate(`/projects/${data[0].id}`, { replace: true });
+      }
+    });
+  }, [user, navigate]);
+
+  if (loading) {
+    return <div className="p-8 text-center text-muted animate-pulse">Loading dashboard...</div>;
+  }
+
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
       <div>
@@ -21,7 +44,7 @@ export const Dashboard: React.FC = () => {
             <p className="text-[11px] text-muted mt-1">+4 from last week</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-1">
             <CardTitle className="text-xs font-medium text-muted">SLA Breaches</CardTitle>

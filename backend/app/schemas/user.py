@@ -1,24 +1,29 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
-from app.models.user import RoleEnum
+from app.models.user import RoleEnum, UserStatus
 
 class UserBase(BaseModel):
     full_name: str
-    email: EmailStr
+    email: str
     role: RoleEnum
-    is_active: bool = True
+    status: UserStatus = UserStatus.ACTIVE
 
 class UserCreate(UserBase):
     password: str
 
+class UserInvite(BaseModel):
+    full_name: str
+    email: str
+    role: RoleEnum
+
 class UserUpdate(BaseModel):
     full_name: str | None = None
-    email: EmailStr | None = None
+    email: str | None = None
     role: RoleEnum | None = None
 
 class UserStatusUpdate(BaseModel):
-    is_active: bool
+    status: UserStatus
 
 class UserInDBBase(UserBase):
     id: UUID

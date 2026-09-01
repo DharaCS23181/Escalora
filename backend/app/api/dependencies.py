@@ -5,7 +5,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.core.security import decode_access_token
-from app.models.user import User, RoleEnum
+from app.models.user import User, RoleEnum, UserStatus
 from app.models.project import Project
 from app.services.user_service import get_user_by_id
 from app.services.project_service import get_project_by_id
@@ -48,7 +48,7 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)]
 ) -> User:
-    if not current_user.is_active:
+    if current_user.status == UserStatus.INACTIVE:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
     return current_user
 

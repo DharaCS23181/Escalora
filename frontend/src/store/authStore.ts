@@ -5,7 +5,7 @@ export interface User {
   full_name: string;
   email: string;
   role: 'ADMIN' | 'PROJECT_LEAD' | 'SENIOR_DEVELOPER' | 'DEVELOPER';
-  is_active: boolean;
+  status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
 }
 
 interface AuthState {

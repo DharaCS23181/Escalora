@@ -36,8 +36,12 @@ export const authService = {
     // update local state
     const currentToken = useAuthStore.getState().token;
     if (currentToken) {
-      useAuthStore.getState().setAuth(user, currentToken);
+        useAuthStore.getState().setAuth(user, currentToken);
     }
     return user;
   },
+  
+  setPassword: async (new_password: string): Promise<void> => {
+    await apiClient.post('/auth/set-password', { new_password });
+  }
 };

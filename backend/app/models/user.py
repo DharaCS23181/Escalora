@@ -12,6 +12,11 @@ class RoleEnum(str, Enum):
     SENIOR_DEVELOPER = "SENIOR_DEVELOPER"
     DEVELOPER = "DEVELOPER"
 
+class UserStatus(str, Enum):
+    PENDING = "PENDING"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
 class User(Base):
     __tablename__ = "users"
 
@@ -20,11 +25,12 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[RoleEnum] = mapped_column(SQLEnum(RoleEnum, name="roleenum"), nullable=False, default=RoleEnum.DEVELOPER)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    status: Mapped[UserStatus] = mapped_column(SQLEnum(UserStatus, name="userstatusenum"), nullable=False, default=UserStatus.ACTIVE)
+    activation_pin: Mapped[str | None] = mapped_column(String(10), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Relationships
     project_memberships: Mapped[list["ProjectMember"]] = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan")
-    led_projects: Mapped[list["Project"]] = relationship("Project", back_populates="project_lead")
+    led_projects: Mapped[list["Project"]] = relationship("Project", back_populates="project_lead", foreign_keys="[Project.project_lead_id]")

@@ -7,8 +7,31 @@ from app.services.auth_service import authenticate_user
 from app.api.dependencies import get_current_active_user
 from app.models.user import User
 
+from pydantic import BaseModel
+
+class SetPasswordRequest(BaseModel):
+    new_password: str
+
 router = APIRouter(tags=["Authentication"])
 
+@router.post("/set-password", status_code=200)
+async def set_password(
+    data: SetPasswordRequest,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    session: Annotated[AsyncSession, Depends(get_db)]
+):
+    """
+    Set a new password. Usually called after a PENDING user logs in with their temporary PIN.
+    """
+    from app.core.security import hash_password
+    from app.models.user import UserStatus
+    
+    current_user.password_hash = hash_password(data.new_password)
+    current_user.activation_pin = None
+    current_user.status = UserStatus.ACTIVE
+    
+    await session.commit()
+    return {"message": "Password updated successfully"}
 @router.post("/login", response_model=Token)
 async def login(
     login_data: LoginRequest,

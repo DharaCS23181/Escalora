@@ -4,6 +4,7 @@ from app.schemas.auth import LoginRequest, Token, UserResponse
 from app.services.user_service import get_user_by_email
 from app.core.security import verify_password, create_access_token
 from datetime import datetime, UTC
+from app.models.user import UserStatus
 
 async def authenticate_user(session: AsyncSession, login_in: LoginRequest) -> Token:
     user = await get_user_by_email(session, login_in.email)
@@ -13,7 +14,7 @@ async def authenticate_user(session: AsyncSession, login_in: LoginRequest) -> To
     if not verify_password(login_in.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
         
-    if not user.is_active:
+    if user.status == UserStatus.INACTIVE:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
         
     # Update last login

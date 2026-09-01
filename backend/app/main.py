@@ -2,7 +2,6 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from app.core.config import settings
-from app.api.routes import health, auth, users, projects
 
 tags_metadata = [
     {"name": "Authentication", "description": "Authentication and authorization"},
@@ -54,19 +53,22 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 # Set up CORS
-if settings.CORS_ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=[str(origin) for origin in settings.CORS_ORIGINS],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[str(origin) for origin in settings.CORS_ORIGINS] if settings.CORS_ORIGINS else ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from app.api.routes import health, auth, users, projects, tickets, notifications
 
 app.include_router(health.router, prefix=f"{settings.API_V1_STR}", tags=["Health"])
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth")
 app.include_router(users.router, prefix=f"{settings.API_V1_STR}/users")
 app.include_router(projects.router, prefix=f"{settings.API_V1_STR}/projects")
+app.include_router(tickets.router, prefix=f"{settings.API_V1_STR}/tickets")
+app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifications")
 
 @app.get("/")
 def root():

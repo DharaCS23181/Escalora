@@ -56,7 +56,37 @@ async def update_user_status(session: AsyncSession, user_id: uuid.UUID, status_i
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         
-    db_user.is_active = status_in.is_active
+    db_user.status = status_in.status
     await session.commit()
     await session.refresh(db_user)
+    return db_user
+
+import random
+import string
+from app.schemas.user import UserInvite
+from app.models.user import UserStatus
+from app.workers.tasks import send_invitation_email
+
+async def invite_user(session: AsyncSession, user_in: UserInvite) -> User:
+    existing_user = await get_user_by_email(session, user_in.email)
+    if existing_user:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
+    
+    # Generate 6 digit PIN
+    pin = ''.join(random.choices(string.digits, k=6))
+    hashed_password = hash_password(pin)
+    
+    user_data = user_in.model_dump()
+    user_data["password_hash"] = hashed_password
+    user_data["status"] = UserStatus.PENDING
+    user_data["activation_pin"] = pin  # store it if we need to show it in UI/logs, though ideally only emailed
+    
+    db_user = User(**user_data)
+    session.add(db_user)
+    await session.commit()
+    await session.refresh(db_user)
+    
+    # Queue Celery task
+    send_invitation_email.delay(db_user.email, db_user.full_name, pin)
+    
     return db_user

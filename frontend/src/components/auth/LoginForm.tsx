@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Moon, Sun, Monitor } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Shield, Code, UserCog, User } from 'lucide-react';
 import { authService } from '../../services/auth';
 import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
 import { cn } from '../../utils/cn';
 
 export const LoginForm: React.FC = () => {
@@ -15,13 +14,6 @@ export const LoginForm: React.FC = () => {
   
   const navigate = useNavigate();
   const { isLoading, setLoading } = useAuthStore();
-  const { theme, setTheme } = useThemeStore();
-
-  const cycleTheme = () => {
-    if (theme === 'light') setTheme('dark');
-    else if (theme === 'dark') setTheme('system');
-    else setTheme('light');
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +26,7 @@ export const LoginForm: React.FC = () => {
       await authService.login(email, password);
       setTimeout(() => navigate('/dashboard'), 300);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Unable to sign in. Check your email and password and try again.');
+      setError(err.response?.data?.detail || 'Unable to sign in. Check your credentials.');
       setShake(true);
       setTimeout(() => setShake(false), 500);
     } finally {
@@ -42,128 +34,129 @@ export const LoginForm: React.FC = () => {
     }
   };
 
+  const quickLogins = [
+    { label: 'Admin', email: 'admin@escalora.com', icon: Shield },
+    { label: 'Project Lead', email: 'lead@escalora.com', icon: UserCog },
+    { label: 'Senior Dev', email: 'senior@escalora.com', icon: Code },
+    { label: 'Developer', email: 'dev@escalora.com', icon: User },
+  ];
+
+  const setCredentials = (targetEmail: string) => {
+    setEmail(targetEmail);
+    setPassword('admin123'); // Default demo password
+  };
+
   return (
-    <div className="relative flex flex-col justify-center items-center w-full h-full p-6 sm:p-12 bg-background">
-      
-      {/* Theme Switcher - Top Right */}
-      <div className="absolute top-6 right-6 z-20">
-        <button 
-          onClick={cycleTheme}
-          className="flex items-center justify-center p-2.5 rounded-full bg-surface border border-border-color text-muted hover:text-foreground hover:bg-surface-hover transition-colors shadow-sm"
-          aria-label="Toggle theme"
-        >
-          {theme === 'light' ? <Sun size={18} /> : theme === 'dark' ? <Moon size={18} /> : <Monitor size={18} />}
-        </button>
+    <div className={cn("w-full p-6 sm:p-10", shake && "animate-[shake_0.4s_ease-in-out]")}>
+      <div className="space-y-3 mb-8 text-center">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground">Welcome back</h2>
+        <p className="text-sm font-medium text-muted">Sign in to your Escalora workspace</p>
       </div>
 
-      <div className={cn(
-        "w-full max-w-[400px] flex flex-col space-y-8 animate-slide-up opacity-0 delay-200",
-        shake && "animate-[shake_0.4s_ease-in-out]"
-      )}>
-        
-        <div className="space-y-3">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Welcome back</h2>
-          <p className="text-sm font-medium text-muted">Sign in to continue to your Escalora workspace.</p>
+      {/* Quick Logins */}
+      <div className="mb-8">
+        <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3 text-center">Quick Access Roles</p>
+        <div className="grid grid-cols-2 gap-2">
+          {quickLogins.map((ql) => (
+            <button
+              key={ql.label}
+              type="button"
+              onClick={() => setCredentials(ql.email)}
+              className="flex items-center justify-center gap-2 p-2.5 text-[11px] font-bold tracking-wide text-muted bg-surface hover:bg-surface-hover hover:text-foreground rounded-lg border border-border-color transition-colors"
+            >
+              <ql.icon size={14} />
+              {ql.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="relative flex items-center py-2 mb-6 opacity-50">
+        <div className="flex-grow border-t border-border-color"></div>
+        <span className="flex-shrink-0 mx-4 text-[10px] font-bold text-muted uppercase tracking-widest">Or login with</span>
+        <div className="flex-grow border-t border-border-color"></div>
+      </div>
+
+      <form onSubmit={handleLogin} className="space-y-5">
+        {error && (
+          <div className="p-3 text-xs font-medium text-red-500 bg-red-500/10 border border-red-500/20 rounded-md text-center">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-2.5">
+          <label className="text-[11px] font-bold text-muted uppercase tracking-wider" htmlFor="email">
+            Email Address
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted group-focus-within:text-accent transition-colors">
+              <Mail size={16} />
+            </div>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              required
+              disabled={isLoading}
+              className="w-full h-11 pl-10 pr-4 text-sm font-medium bg-background border border-border-color rounded-lg outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 shadow-sm"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          
-          {error && (
-            <div className="p-3 text-xs font-medium text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
-              {error}
-            </div>
-          )}
-
-          <div className="space-y-5">
-            <div className="space-y-2.5">
-              <label className="text-[11px] font-bold text-muted uppercase tracking-wider" htmlFor="email">
-                Email Address
-              </label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted group-focus-within:text-accent transition-colors">
-                  <Mail size={16} />
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  required
-                  autoComplete="email"
-                  disabled={isLoading}
-                  className="w-full h-12 pl-11 pr-4 text-sm font-medium bg-surface border border-border-color rounded-lg outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 disabled:opacity-50 shadow-sm"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-muted uppercase tracking-wider" htmlFor="password">
-                  Password
-                </label>
-                <a href="#" className="text-[11px] font-semibold text-muted hover:text-foreground transition-colors outline-none focus-visible:text-accent">
-                  Forgot password?
-                </a>
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted group-focus-within:text-accent transition-colors">
-                  <Lock size={16} />
-                </div>
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
-                  disabled={isLoading}
-                  className="w-full h-12 pl-11 pr-11 text-sm font-medium bg-surface border border-border-color rounded-lg outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 disabled:opacity-50 shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  disabled={isLoading}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-muted hover:text-foreground focus:outline-none focus-visible:text-accent transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex items-center">
-              <input 
-                type="checkbox" 
-                id="remember" 
-                className="w-4 h-4 rounded border-border-color text-accent focus:ring-accent/50 focus:ring-offset-0 bg-surface accent-accent"
-              />
-              <label htmlFor="remember" className="ml-2.5 text-xs font-semibold text-muted select-none cursor-pointer">
-                Remember me
-              </label>
-            </div>
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-bold text-muted uppercase tracking-wider" htmlFor="password">
+              Password
+            </label>
+            <a href="#" className="text-[11px] font-semibold text-muted hover:text-foreground transition-colors">
+              Forgot password?
+            </a>
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || !email || !password}
-            className="group relative flex items-center justify-center w-full h-12 mt-4 text-sm font-bold tracking-wide text-primary bg-accent rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(231,254,37,0.4)] transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent focus-visible:ring-offset-background"
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 size={18} className="animate-spin" />
-                SIGNING IN...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                SIGN IN
-                <ArrowRight size={18} className="transition-transform duration-200 group-hover:translate-x-1.5" />
-              </span>
-            )}
-          </button>
-        </form>
-      </div>
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-muted group-focus-within:text-accent transition-colors">
+              <Lock size={16} />
+            </div>
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              disabled={isLoading}
+              className="w-full h-11 pl-10 pr-10 text-sm font-medium bg-background border border-border-color rounded-lg outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-200 shadow-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              disabled={isLoading}
+              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-muted hover:text-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+        </div>
+        
+        <button
+          type="submit"
+          disabled={isLoading || !email || !password}
+          className="group relative flex items-center justify-center w-full h-11 mt-2 text-sm font-bold tracking-wide text-primary bg-accent rounded-lg disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(231,254,37,0.4)] transition-all duration-200"
+        >
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <Loader2 size={16} className="animate-spin" />
+              SIGNING IN...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              SIGN IN
+              <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
+            </span>
+          )}
+        </button>
+      </form>
     </div>
   );
 };

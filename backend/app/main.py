@@ -61,7 +61,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.api.routes import health, auth, users, projects, tickets, notifications, sla, escalations, dashboard
+from app.api.routes import health, auth, users, projects, tickets, notifications, sla, escalations, dashboard, maintenance
 
 app.include_router(health.router, prefix=f"{settings.API_V1_STR}", tags=["Health"])
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth")
@@ -72,6 +72,7 @@ app.include_router(notifications.router, prefix=f"{settings.API_V1_STR}/notifica
 app.include_router(sla.router, prefix=f"{settings.API_V1_STR}/sla")
 app.include_router(escalations.router, prefix=f"{settings.API_V1_STR}/escalations")
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_STR}/dashboard")
+app.include_router(maintenance.router, prefix=f"{settings.API_V1_STR}/internal/maintenance", tags=["Maintenance"])
 
 @app.get("/")
 def root():

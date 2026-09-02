@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str | None = None
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    SLA_MAINTENANCE_SECRET: str = "change_me_to_a_strong_secret_in_production"
     
     # Development Seed
     INITIAL_ADMIN_EMAIL: str = "admin@escalora.com"

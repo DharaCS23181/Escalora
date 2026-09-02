@@ -3,14 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.schemas.user import User as UserSchema, UserCreate, UserUpdate, UserStatusUpdate, UserInvite
+from app.schemas.user import User as UserSchema, UserCreate, UserUpdate, UserStatusUpdate, UserInvite, UserChangePassword
 from app.models.user import User, RoleEnum, UserStatus
-from app.api.dependencies import RequireRole
+from app.api.dependencies import RequireRole, get_current_user
 from app.services import user_service
 from app.core.config import settings
-from app.workers.tasks import send_invitation_email
-from app.services.email_service import send_invitation_email_sync
-from app.core.security import hash_password
+from app.core.security import hash_password, verify_password
 import random
 import string
 
@@ -30,48 +28,50 @@ async def create_user(
     """
     return await user_service.create_user(session, user_in)
 
-from fastapi import BackgroundTasks
-
 @router.post("/invite", response_model=UserSchema, status_code=status.HTTP_201_CREATED)
 async def invite_user(
     user_in: UserInvite,
-    background_tasks: BackgroundTasks,
     session: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(admin_required)]
 ):
     """
-    Invite a new user (PENDING status, sends PIN email). Admin only.
+    Create a new user with default password (ACTIVE status). Admin only.
     """
-    return await user_service.invite_user(session, user_in, background_tasks)
+    return await user_service.invite_user(session, user_in)
 
 @router.post("/{user_id}/resend-invite", status_code=status.HTTP_200_OK)
 async def resend_invite(
     user_id: uuid.UUID,
-    background_tasks: BackgroundTasks,
     session: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(admin_required)]
 ):
     """
-    Resend invitation to a PENDING user. Admin only.
+    Deprecated. No longer used since emails are not sent.
     """
-    user = await user_service.get_user_by_id(session, user_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email invitations are disabled.")
+
+@router.patch("/me/password", status_code=status.HTTP_200_OK)
+async def change_password(
+    password_data: UserChangePassword,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]
+):
+    """
+    Change the current user's password.
+    """
+    if not verify_password(password_data.current_password, current_user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect current password")
         
-    if user.status != UserStatus.PENDING:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Can only resend invitations to PENDING users")
+    if password_data.new_password != password_data.confirm_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New passwords do not match")
         
-    pin = ''.join(random.choices(string.digits, k=6))
-    user.password_hash = hash_password(pin)
-    user.activation_pin = pin
+    if len(password_data.new_password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters")
+        
+    current_user.password_hash = hash_password(password_data.new_password)
     await session.commit()
     
-    if settings.CELERY_ENABLED:
-        send_invitation_email.delay(user.email, user.full_name, pin)
-    else:
-        background_tasks.add_task(send_invitation_email_sync, user.email, user.full_name, pin)
-        
-    return {"message": "Invitation resent"}
+    return {"message": "Password changed successfully"}
 
 @router.get("", response_model=list[UserSchema])
 async def get_users(

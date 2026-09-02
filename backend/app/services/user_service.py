@@ -66,34 +66,24 @@ import random
 import string
 from app.schemas.user import UserInvite
 from app.models.user import UserStatus
-from app.workers.tasks import send_invitation_email
-from app.services.email_service import send_invitation_email_sync
 from app.core.config import settings
 
-async def invite_user(session: AsyncSession, user_in: UserInvite, background_tasks: BackgroundTasks) -> User:
+async def invite_user(session: AsyncSession, user_in: UserInvite) -> User:
     existing_user = await get_user_by_email(session, user_in.email)
     if existing_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
     
-    # Generate 6 digit PIN
-    pin = ''.join(random.choices(string.digits, k=6))
-    hashed_password = hash_password(pin)
+    # Default password
+    default_password = "password"
+    hashed_password = hash_password(default_password)
     
     user_data = user_in.model_dump()
     user_data["password_hash"] = hashed_password
-    user_data["status"] = UserStatus.PENDING
-    user_data["activation_pin"] = pin  # store it if we need to show it in UI/logs, though ideally only emailed
+    user_data["status"] = UserStatus.ACTIVE
     
     db_user = User(**user_data)
     session.add(db_user)
     await session.commit()
     await session.refresh(db_user)
-    
-    if settings.CELERY_ENABLED:
-        # Queue Celery task
-        send_invitation_email.delay(db_user.email, db_user.full_name, pin)
-    else:
-        # Fast API background tasks for Render Free
-        background_tasks.add_task(send_invitation_email_sync, db_user.email, db_user.full_name, pin)
     
     return db_user

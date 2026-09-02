@@ -6,11 +6,8 @@ import {
   Layers,
   AlertTriangle,
   ShieldAlert,
-  BarChart3, 
   FileText, 
-  Settings,
-  Users,
-  Activity
+  Users
 } from 'lucide-react';
 import { Tooltip } from '../ui/Tooltip';
 import { cn } from '../../utils/cn';
@@ -32,10 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { icon: Layers, label: 'Tickets', path: '/tickets', roles: ['PROJECT_LEAD', 'SENIOR_DEVELOPER', 'DEVELOPER'] },
   { icon: AlertTriangle, label: 'Escalations', path: '/escalations', roles: ['ADMIN', 'PROJECT_LEAD', 'SENIOR_DEVELOPER'] },
   { icon: Users, label: 'Users', path: '/users', roles: ['ADMIN'] },
-  { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: ['ADMIN', 'PROJECT_LEAD'] },
   { icon: ShieldAlert, label: 'SLA Policies', path: '/sla', roles: ['ADMIN'] },
-  { icon: Activity, label: 'Audit Logs', path: '/audit', roles: ['ADMIN'] },
-  { icon: Settings, label: 'Settings', path: '/settings', roles: ['ADMIN'] },
 ];
 
 export const FloatingNavigation: React.FC = () => {

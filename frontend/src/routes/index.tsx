@@ -58,11 +58,6 @@ export const router = createBrowserRouter([
               <SlaPolicies />
             </RoleProtectedRoute>
           )},
-          { path: 'analytics', element: <div className="p-8">Analytics Placeholder</div> },
-          { path: 'reports', element: <div className="p-8">Reports Placeholder</div> },
-          { path: 'notifications', element: <div className="p-8">Notifications Placeholder</div> },
-          { path: 'settings', element: <div className="p-8">Settings Placeholder</div> },
-          { path: 'profile', element: <div className="p-8">Profile Placeholder</div> },
         ],
       },
     ],

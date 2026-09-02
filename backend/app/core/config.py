@@ -1,7 +1,7 @@
 import os
 from typing import List, Union
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import AnyHttpUrl, field_validator
+from pydantic import AnyHttpUrl, field_validator, model_validator
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Escalora API"
@@ -19,13 +19,13 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str
     
     # Security
-    JWT_SECRET_KEY: str = "change_me_later"
+    JWT_SECRET_KEY: str | None = None
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Development Seed
     INITIAL_ADMIN_EMAIL: str = "admin@escalora.com"
-    INITIAL_ADMIN_PASSWORD: str = "admin123"
+    INITIAL_ADMIN_PASSWORD: str | None = None
     INITIAL_ADMIN_NAME: str = "System Admin"
     
     # SMTP Email
@@ -50,5 +50,19 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")
+
+    @model_validator(mode='after')
+    def validate_prod_secrets(self) -> 'Settings':
+        if self.APP_ENV == "production":
+            if not self.JWT_SECRET_KEY or self.JWT_SECRET_KEY == "change_me_later":
+                raise ValueError("JWT_SECRET_KEY must be set to a secure value in production")
+            if not self.INITIAL_ADMIN_PASSWORD or self.INITIAL_ADMIN_PASSWORD == "admin123":
+                raise ValueError("INITIAL_ADMIN_PASSWORD must be securely set in production")
+        else:
+            if not self.JWT_SECRET_KEY:
+                self.JWT_SECRET_KEY = "change_me_later"
+            if not self.INITIAL_ADMIN_PASSWORD:
+                self.INITIAL_ADMIN_PASSWORD = "admin123"
+        return self
 
 settings = Settings()

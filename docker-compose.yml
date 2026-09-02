@@ -1,4 +1,4 @@
-version: '3.8'
+
 
 services:
   postgres:
@@ -37,6 +37,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     container_name: escalora_backend
     volumes:
       - ./backend:/app
@@ -56,6 +57,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     container_name: escalora_celery_worker
     command: celery -A app.workers.celery_app worker -l info
     volumes:
@@ -74,6 +76,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: development
     container_name: escalora_celery_beat
     command: celery -A app.workers.celery_app beat -l info
     volumes:
@@ -92,6 +95,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: development
     container_name: escalora_frontend
     volumes:
       - ./frontend:/app

@@ -28,3 +28,7 @@ Thumbs.db
 
 # Docker
 docker-data/
+
+# Celery Beat
+backend/celerybeat-schedule
+backend/celerybeat-schedule.*

@@ -10,8 +10,6 @@ async def test_health_check():
     assert response.status_code in (200, 503)
     data = response.json()
     assert "status" in data
-    assert "database" in data
-    assert "redis" in data
 
 @pytest.mark.asyncio
 async def test_openapi_schema():

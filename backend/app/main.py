@@ -17,6 +17,17 @@ tags_metadata = [
     {"name": "Health", "description": "API health checks"},
 ]
 
+from contextlib import asynccontextmanager
+from app.db.session import AsyncSessionLocal
+from app.db.seed import seed_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure initial admin (and dev data if applicable) is seeded on startup
+    async with AsyncSessionLocal() as session:
+        await seed_db(session)
+    yield
+
 app = FastAPI(
     title="Escalora API",
     description="REST API for the Escalora Intelligent Software Maintenance Ticket Escalation System.",
@@ -24,7 +35,8 @@ app = FastAPI(
     openapi_url="/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_tags=tags_metadata
+    openapi_tags=tags_metadata,
+    lifespan=lifespan
 )
 
 def custom_openapi():

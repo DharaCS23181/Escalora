@@ -61,13 +61,16 @@ async def update_user_status(session: AsyncSession, user_id: uuid.UUID, status_i
     await session.refresh(db_user)
     return db_user
 
+from fastapi import BackgroundTasks
 import random
 import string
 from app.schemas.user import UserInvite
 from app.models.user import UserStatus
 from app.workers.tasks import send_invitation_email
+from app.services.email_service import send_invitation_email_sync
+from app.core.config import settings
 
-async def invite_user(session: AsyncSession, user_in: UserInvite) -> User:
+async def invite_user(session: AsyncSession, user_in: UserInvite, background_tasks: BackgroundTasks) -> User:
     existing_user = await get_user_by_email(session, user_in.email)
     if existing_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
@@ -86,7 +89,11 @@ async def invite_user(session: AsyncSession, user_in: UserInvite) -> User:
     await session.commit()
     await session.refresh(db_user)
     
-    # Queue Celery task
-    send_invitation_email.delay(db_user.email, db_user.full_name, pin)
+    if settings.CELERY_ENABLED:
+        # Queue Celery task
+        send_invitation_email.delay(db_user.email, db_user.full_name, pin)
+    else:
+        # Fast API background tasks for Render Free
+        background_tasks.add_task(send_invitation_email_sync, db_user.email, db_user.full_name, pin)
     
     return db_user

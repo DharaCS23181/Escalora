@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, Shield, Code, UserCog, User } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
 import { authService } from '../../services/auth';
 import { useAuthStore } from '../../store/authStore';
 import { cn } from '../../utils/cn';
@@ -34,17 +34,7 @@ export const LoginForm: React.FC = () => {
     }
   };
 
-  const quickLogins = [
-    { label: 'Admin', email: 'admin@escalora.com', icon: Shield },
-    { label: 'Project Lead', email: 'lead@escalora.com', icon: UserCog },
-    { label: 'Senior Dev', email: 'senior@escalora.com', icon: Code },
-    { label: 'Developer', email: 'dev@escalora.com', icon: User },
-  ];
 
-  const setCredentials = (targetEmail: string) => {
-    setEmail(targetEmail);
-    setPassword('admin123'); // Default demo password
-  };
 
   return (
     <div className={cn("w-full p-6 sm:p-10", shake && "animate-[shake_0.4s_ease-in-out]")}>
@@ -53,29 +43,7 @@ export const LoginForm: React.FC = () => {
         <p className="text-sm font-medium text-muted">Sign in to your Escalora workspace</p>
       </div>
 
-      {/* Quick Logins */}
-      <div className="mb-8">
-        <p className="text-[11px] font-bold text-muted uppercase tracking-wider mb-3 text-center">Quick Access Roles</p>
-        <div className="grid grid-cols-2 gap-2">
-          {quickLogins.map((ql) => (
-            <button
-              key={ql.label}
-              type="button"
-              onClick={() => setCredentials(ql.email)}
-              className="flex items-center justify-center gap-2 p-2.5 text-[11px] font-bold tracking-wide text-muted bg-surface hover:bg-surface-hover hover:text-foreground rounded-lg border border-border-color transition-colors"
-            >
-              <ql.icon size={14} />
-              {ql.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      <div className="relative flex items-center py-2 mb-6 opacity-50">
-        <div className="flex-grow border-t border-border-color"></div>
-        <span className="flex-shrink-0 mx-4 text-[10px] font-bold text-muted uppercase tracking-widest">Or login with</span>
-        <div className="flex-grow border-t border-border-color"></div>
-      </div>
 
       <form onSubmit={handleLogin} className="space-y-5">
         {error && (

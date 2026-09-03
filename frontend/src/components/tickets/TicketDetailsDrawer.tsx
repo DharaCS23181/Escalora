@@ -26,10 +26,8 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
   const [isManualEscalateOpen, setIsManualEscalateOpen] = useState(false);
   const [projectMembers, setProjectMembers] = useState<any[]>([]);
 
-  if (!isOpen) return null;
-
   useEffect(() => {
-    if (!ticketId) return;
+    if (!ticketId || !isOpen) return;
     
     const fetchData = async () => {
       setLoading(true);
@@ -100,6 +98,8 @@ export const TicketDetailsDrawer: React.FC<TicketDetailsDrawerProps> = ({ ticket
       alert(e.response?.data?.detail || "Failed to update priority");
     }
   };
+
+  if (!isOpen) return null;
 
   if (loading) {
     return (

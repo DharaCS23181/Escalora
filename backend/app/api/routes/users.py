@@ -123,3 +123,14 @@ async def update_user_status(
     Activate/deactivate user. Admin only.
     """
     return await user_service.update_user_status(session, user_id, status_in)
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: uuid.UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(admin_required)]
+):
+    """
+    Delete user completely. Admin only.
+    """
+    await user_service.delete_user(session, user_id)

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/Button';
-import { Search, UserPlus, Filter, MoreHorizontal, Mail, Shield, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
+import { Search, UserPlus, Filter, Mail, Shield, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
 import { userService } from '../services/user';
 import type { User } from '../store/authStore';
 import { CreateUserModal } from '../components/users/CreateUserModal';
@@ -12,15 +12,6 @@ export const Users: React.FC = () => {
   const [search, setSearch] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { user: currentUser } = useAuthStore();
-
-  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setOpenDropdownId(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -52,13 +43,14 @@ export const Users: React.FC = () => {
     }
   };
 
-  const handleRoleChange = async (id: string, newRole: string) => {
+  const handleDeleteUser = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
     try {
-      await userService.updateUser(id, { role: newRole });
+      await userService.deleteUser(id);
       fetchUsers();
     } catch (e) {
       console.error(e);
-      alert('Failed to update role');
+      alert('Failed to delete user');
     }
   };
 
@@ -138,7 +130,7 @@ export const Users: React.FC = () => {
                 </tr>
               ) : (
                 filteredUsers.map((u) => (
-                  <tr key={u.id} className={`transition-colors group relative ${openDropdownId === u.id ? 'bg-surface-hover/40 z-50' : 'hover:bg-surface-hover/40 z-0'}`}>
+                  <tr key={u.id} className="transition-colors group relative hover:bg-surface-hover/40 z-0">
                     <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-accent/10 text-accent flex items-center justify-center font-bold text-xs border border-accent/20 uppercase">
@@ -162,7 +154,7 @@ export const Users: React.FC = () => {
                       {getStatusBadge(u.status)}
                     </td>
                     <td className="px-6 py-3 text-right">
-                      <div className={`flex items-center justify-end gap-2 transition-opacity ${openDropdownId === u.id ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
+                      <div className="flex items-center justify-end gap-2 transition-opacity opacity-100 sm:opacity-0 sm:group-hover:opacity-100">
                         {u.id !== currentUser?.id && u.status === 'ACTIVE' && (
                           <Button variant="ghost" size="sm" onClick={() => handleStatusChange(u.id, 'INACTIVE')} className="h-7 text-xs px-2 text-red-400 hover:text-red-500 hover:bg-red-500/10">
                             Deactivate
@@ -174,47 +166,11 @@ export const Users: React.FC = () => {
                           </Button>
                         )}
                         
-                        <div className="relative">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 text-muted"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdownId(openDropdownId === u.id ? null : u.id);
-                            }}
-                          >
-                            <MoreHorizontal size={14} />
+                        {u.id !== currentUser?.id && (
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(u.id)} className="h-7 text-xs px-2 text-red-500 hover:text-red-600 hover:bg-red-500/10">
+                            Delete
                           </Button>
-                          
-                          {openDropdownId === u.id && (
-                            <div className="absolute right-0 mt-1 w-48 bg-surface border border-border-color shadow-xl rounded-lg py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
-                              <div className="px-3 py-1.5 border-b border-border-color mb-1">
-                                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">Change Role</span>
-                              </div>
-                              {['DEVELOPER', 'SENIOR_DEVELOPER', 'PROJECT_LEAD', 'ADMIN'].map(role => (
-                                <button
-                                  key={role}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRoleChange(u.id, role);
-                                    setOpenDropdownId(null);
-                                  }}
-                                  disabled={u.role === role || u.id === currentUser?.id}
-                                  className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                                    u.role === role 
-                                      ? 'text-accent bg-accent/5 font-semibold' 
-                                      : u.id === currentUser?.id
-                                        ? 'text-muted/50 cursor-not-allowed'
-                                        : 'text-foreground/80 hover:bg-surface-hover hover:text-foreground'
-                                  }`}
-                                >
-                                  {role.replace('_', ' ')}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                        )}
                       </div>
                     </td>
                   </tr>

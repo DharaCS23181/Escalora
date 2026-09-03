@@ -61,6 +61,14 @@ async def update_user_status(session: AsyncSession, user_id: uuid.UUID, status_i
     await session.refresh(db_user)
     return db_user
 
+async def delete_user(session: AsyncSession, user_id: uuid.UUID) -> None:
+    db_user = await get_user_by_id(session, user_id)
+    if not db_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+    await session.delete(db_user)
+    await session.commit()
+
 from fastapi import BackgroundTasks
 import random
 import string

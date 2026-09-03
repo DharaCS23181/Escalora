@@ -122,8 +122,22 @@ async def get_dashboard_overview(session: AsyncSession, current_user: User, proj
         func.sum(case((Escalation.status == EscalationStatusEnum.RESOLVED, 1), else_=0)).label("resolved")
     ).where(Escalation.assigned_to_id == current_user.id)
 
-    # 5. Trend Query (Last 7 Days Ticket Activity)
-    trend_query = text("""
+    proj_filter_sql = ""
+    if project_id:
+        if current_user.role == RoleEnum.ADMIN or (auth_project_ids is not None and project_id in auth_project_ids):
+            proj_filter_sql = f"AND project_id = '{project_id}'"
+        else:
+            proj_filter_sql = f"AND project_id = '00000000-0000-0000-0000-000000000000'"
+            
+    rbac_filter_sql = ""
+    if auth_project_ids is not None:
+        if len(auth_project_ids) == 0:
+            rbac_filter_sql = "AND FALSE"
+        else:
+            pids = ",".join(f"'{pid}'" for pid in auth_project_ids)
+            rbac_filter_sql = f"AND project_id IN ({pids})"
+
+    trend_query = text(f"""
         WITH dates AS (
             SELECT generate_series(
                 CURRENT_DATE - INTERVAL '6 days',
@@ -138,25 +152,15 @@ async def get_dashboard_overview(session: AsyncSession, current_user: User, proj
         FROM dates d
         LEFT JOIN tickets t_created 
             ON DATE(t_created.created_at) = d.day
-            AND (t_created.project_id = CAST(:proj_id AS uuid) OR CAST(:proj_id AS uuid) IS NULL)
-            AND (CAST(:user_proj_list AS uuid[]) IS NULL OR t_created.project_id = ANY(CAST(:user_proj_list AS uuid[])))
+            {proj_filter_sql.replace('project_id', 't_created.project_id')}
+            {rbac_filter_sql.replace('project_id', 't_created.project_id')}
         LEFT JOIN tickets t_resolved 
             ON DATE(t_resolved.resolved_at) = d.day
-            AND (t_resolved.project_id = CAST(:proj_id AS uuid) OR CAST(:proj_id AS uuid) IS NULL)
-            AND (CAST(:user_proj_list AS uuid[]) IS NULL OR t_resolved.project_id = ANY(CAST(:user_proj_list AS uuid[])))
+            {proj_filter_sql.replace('project_id', 't_resolved.project_id')}
+            {rbac_filter_sql.replace('project_id', 't_resolved.project_id')}
         GROUP BY d.day
         ORDER BY d.day;
     """)
-
-    if project_id:
-        if current_user.role == RoleEnum.ADMIN or (auth_project_ids is not None and project_id in auth_project_ids):
-            proj_id_val = str(project_id)
-        else:
-            proj_id_val = "00000000-0000-0000-0000-000000000000"
-    else:
-        proj_id_val = None
-
-    user_proj_list = [str(pid) for pid in auth_project_ids] if auth_project_ids is not None else None
 
     # 6. Team Workload Query
     workload_query = select(
@@ -196,7 +200,7 @@ async def get_dashboard_overview(session: AsyncSession, current_user: User, proj
         session.execute(proj_query),
         session.execute(my_tickets_query),
         session.execute(my_esc_query),
-        session.execute(trend_query, {"proj_id": proj_id_val, "user_proj_list": user_proj_list}),
+        session.execute(trend_query),
         session.execute(workload_query),
         session.execute(sla_priority_query)
     )

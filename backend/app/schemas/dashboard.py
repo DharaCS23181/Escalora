@@ -38,7 +38,7 @@ class DashboardProjectOverviewItem(BaseModel):
     breached_count: int
     escalated_count: int
     total_sla_count: int
-    sla_compliance_percent: int
+    sla_compliance_percent: float
 
 class DashboardNeedsAttentionItem(BaseModel):
     id: UUID

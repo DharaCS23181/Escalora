@@ -2,7 +2,6 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from '../components/layout/Header';
 import { FloatingNavigation } from '../components/layout/FloatingNavigation';
-import { SetPasswordModal } from '../components/auth/SetPasswordModal';
 import { RequireProjectAccess } from '../components/auth/RequireProjectAccess';
 import { Toaster } from 'react-hot-toast';
 
@@ -19,7 +18,6 @@ export const AppLayout: React.FC = () => {
           </RequireProjectAccess>
         </div>
       </main>
-      <SetPasswordModal />
       <Toaster 
         position="top-right" 
         toastOptions={{

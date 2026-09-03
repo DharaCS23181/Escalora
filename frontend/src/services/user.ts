@@ -41,5 +41,9 @@ export const userService = {
   updateUserStatus: async (id: string, status: string): Promise<User> => {
     const response = await apiClient.patch(`/users/${id}/status`, { status });
     return response.data;
+  },
+
+  changePassword: async (data: Record<string, string>): Promise<void> => {
+    await apiClient.patch('/users/me/password', data);
   }
 };

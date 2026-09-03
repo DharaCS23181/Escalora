@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { SearchInput } from '../ui/SearchInput';
 import { Avatar } from '../ui/Avatar';
-import { Bell, Moon, Sun, Monitor, LogOut, User as UserIcon, CheckCheck } from 'lucide-react';
+import { Bell, Moon, Sun, Monitor, LogOut, User as UserIcon, CheckCheck, Lock } from 'lucide-react';
 import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../services/auth';
@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import lightLogo from '../../assets/light.png';
 import darkLogo from '../../assets/dark.png';
+import { ChangePasswordModal } from '../auth/ChangePasswordModal';
 
 export const Header: React.FC = () => {
   const { theme, setTheme } = useThemeStore();
@@ -18,6 +19,7 @@ export const Header: React.FC = () => {
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   
@@ -200,8 +202,14 @@ export const Header: React.FC = () => {
                 </div>
               </div>
               <div className="p-2">
-                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-surface-hover rounded-md transition-colors">
-                  <UserIcon size={16} /> My Profile
+                <button 
+                  onClick={() => {
+                    setShowProfileMenu(false);
+                    setShowChangePassword(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-muted hover:text-foreground hover:bg-surface-hover rounded-md transition-colors"
+                >
+                  <Lock size={16} /> Change Password
                 </button>
                 <button 
                   onClick={handleLogout}
@@ -214,6 +222,10 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
+      <ChangePasswordModal 
+        isOpen={showChangePassword} 
+        onClose={() => setShowChangePassword(false)} 
+      />
     </header>
   );
 };

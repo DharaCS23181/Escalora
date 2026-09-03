@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
-import { X, Mail, User as UserIcon, Shield, Loader2 } from 'lucide-react';
+import { X, Mail, User as UserIcon, Shield, Loader2, CheckCircle } from 'lucide-react';
 import { userService } from '../../services/user';
 
-interface InviteUserModalProps {
+interface CreateUserModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onSuccess }) => {
+export const CreateUserModal: React.FC<CreateUserModalProps> = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [created, setCreated] = useState(false);
   
   const [formData, setFormData] = useState({
     full_name: '',
@@ -25,9 +26,9 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onSuc
     try {
       await userService.inviteUser(formData);
       onSuccess();
-      onClose();
+      setCreated(true);
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to invite user");
+      setError(err.response?.data?.detail || "Failed to create user");
       setLoading(false);
     }
   };
@@ -37,8 +38,8 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onSuc
       <div className="bg-surface border border-border-color shadow-2xl rounded-xl w-full max-w-md overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-border-color bg-surface-hover/30">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Invite User</h2>
-            <p className="text-xs text-muted mt-1">Send an invitation to join Escalora.</p>
+            <h2 className="text-lg font-bold text-foreground">Create User</h2>
+            <p className="text-xs text-muted mt-1">Add a new user to Escalora.</p>
           </div>
           <button 
             onClick={onClose}
@@ -49,12 +50,26 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onSuc
         </div>
         
         <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-3 rounded-lg">
-                {error}
+          {created ? (
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+              <div className="w-12 h-12 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-6 h-6" />
               </div>
-            )}
+              <h3 className="text-lg font-bold text-foreground">User created successfully</h3>
+              <p className="text-sm text-muted mt-2 mb-6">
+                The user can now log in. Initial password: <code className="bg-surface-hover px-2 py-1 rounded border border-border-color text-accent font-bold">password</code>
+              </p>
+              <Button onClick={onClose} className="w-full">
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-3 rounded-lg">
+                  {error}
+                </div>
+              )}
             
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-muted uppercase tracking-wider">Full Name</label>
@@ -112,10 +127,11 @@ export const InviteUserModal: React.FC<InviteUserModalProps> = ({ onClose, onSuc
               </Button>
               <Button type="submit" disabled={loading}>
                 {loading ? <Loader2 size={16} className="animate-spin mr-2" /> : null}
-                Send Invitation
+                Create User
               </Button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>

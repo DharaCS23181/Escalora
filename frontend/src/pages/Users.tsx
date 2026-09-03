@@ -3,14 +3,14 @@ import { Button } from '../components/ui/Button';
 import { Search, UserPlus, Filter, MoreHorizontal, Mail, Shield, CheckCircle2, Clock, XCircle, ArrowRight } from 'lucide-react';
 import { userService } from '../services/user';
 import type { User } from '../store/authStore';
-import { InviteUserModal } from '../components/users/InviteUserModal';
+import { CreateUserModal } from '../components/users/CreateUserModal';
 import { useAuthStore } from '../store/authStore';
 
 export const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { user: currentUser } = useAuthStore();
 
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -39,13 +39,7 @@ export const Users: React.FC = () => {
   }, []);
 
   const handleResendInvite = async (id: string) => {
-    try {
-      await userService.resendInvite(id);
-      alert('Invitation resent successfully');
-    } catch (e) {
-      console.error(e);
-      alert('Failed to resend invite');
-    }
+    // Deprecated
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
@@ -94,9 +88,9 @@ export const Users: React.FC = () => {
           <p className="text-sm text-muted">Manage team members, roles, and access control.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={() => setIsInviteModalOpen(true)} className="gap-2">
+          <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
             <UserPlus size={16} />
-            Invite User
+            Create User
           </Button>
         </div>
       </div>
@@ -169,11 +163,6 @@ export const Users: React.FC = () => {
                     </td>
                     <td className="px-6 py-3 text-right">
                       <div className={`flex items-center justify-end gap-2 transition-opacity ${openDropdownId === u.id ? 'opacity-100' : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'}`}>
-                        {u.status === 'PENDING' && (
-                          <Button variant="outline" size="sm" onClick={() => handleResendInvite(u.id)} className="h-7 text-xs px-2">
-                            Resend Invite
-                          </Button>
-                        )}
                         {u.id !== currentUser?.id && u.status === 'ACTIVE' && (
                           <Button variant="ghost" size="sm" onClick={() => handleStatusChange(u.id, 'INACTIVE')} className="h-7 text-xs px-2 text-red-400 hover:text-red-500 hover:bg-red-500/10">
                             Deactivate
@@ -236,9 +225,9 @@ export const Users: React.FC = () => {
         </div>
       </div>
       
-      {isInviteModalOpen && (
-        <InviteUserModal 
-          onClose={() => setIsInviteModalOpen(false)} 
+      {isCreateModalOpen && (
+        <CreateUserModal 
+          onClose={() => setIsCreateModalOpen(false)} 
           onSuccess={fetchUsers} 
         />
       )}

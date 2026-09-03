@@ -10,7 +10,7 @@ class UserBase(BaseModel):
     status: UserStatus = UserStatus.ACTIVE
 
 class UserCreate(UserBase):
-    password: str
+    password: str = "password"
 
 class UserInvite(BaseModel):
     full_name: str
